@@ -1,0 +1,18 @@
+sequenceDiagram
+  participant A as browser
+  participant B as server
+
+A->>B: POST https://studies.cs.helsinki.fi/exampleapp/new_note
+B-->>A: HTTP status 302 (URL redirect to /notes)
+
+A->>B: GET https://studies.cs.helsinki.fi/exampleapp/notes
+B-->>A: HTML document
+
+A->>B: GET https://studies.cs.helsinki.fi/exampleapp/main.css
+B-->>A: main.css
+
+A->>B: GET https://studies.cs.helsinki.fi/exampleapp/main.js
+B-->>A: main.js
+
+A->>B: GET https://studies.cs.helsinki.fi/exampleapp/data.json
+B-->>A: [{content: "halo", date: "2026-09-12T05:54:52.976Z"},…]
