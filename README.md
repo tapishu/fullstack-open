@@ -93,3 +93,46 @@ Public git repository
 Root directory: part3/Practice
 Build Command: npm install
 Start Command: npm start
+
+フロントエンド側でnote.jsの参照URLの変更
+//const baseUrl = "http://localhost:3001/notes";
+const baseUrl = "/api/notes";
+コード圧縮用のファイルを作成するためにbuildを実行
+npm run build
+distが作成される
+今回は一つのサーバーにフロントエンドとバックエンドをまとめる
+このdistをバックエンドのルートディレクトリに保存
+バックエンドのindex.jsに
+app.use(express.static('dist'))を追加
+*「Express（バックエンド）に、dist フォルダの中身（HTML/CSS/JSなどの静的ファイル）をWebページとしてそのまま外部に見せて（配信して）いいよ！」 と許可を与える設定です。
+
+
+フロントエンドのデプロイ
+バックエンド側のpackage.jsonファイルの編集
+{
+  "scripts": {
+    //...
+        //古いdistを消して。フロントエンド側のルートディレクトリに移動し、buildを実行してdistをバックエンドのルートディレクトリに再起的にコピーしている？ 
+    "build:ui": "rm -rf dist && cd ../part2 && npm run build && cp -r dist ../part3",
+    "deploy:full": "npm run build:ui && git add . && git commit -m uibuild && git push"
+  }
+}
+
+プロキシ
+開発モードではフロントエンドがlocalhost:5173のアドレスにあるため、バックエンドへのリクエストは誤ったアドレスlocalhost:5173/api/notesに送信されます。バックエンドはlocalhost:3001にあります。
+プロジェクトがViteで作成されている場合、この問題は簡単に解決できます。frontendディレクトリのvite.config.jsファイルに以下の宣言を追加するだけで十分です。
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    }
+  },
+})
