@@ -58,5 +58,9 @@ Visual Studio Code RESTクライアント
 アプリケーションのルートディレクトリに「 requests」という名前のディレクトリを作成します。
 すべてのRESTクライアントリクエストを、拡張子「.rest」が付いたファイルとしてそのディレクトリに保存します。
 
+ミドルウェアの使用
+app.use(express.json())
+app.use(requestLogger)
+
 アプリケーションにログ記録用のミドルウェア「morgan」
 npm install morgan
