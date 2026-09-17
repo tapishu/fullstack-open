@@ -28,7 +28,7 @@ package.jsonに以下を挿入
     "test": "echo \"Error: no test specified\" && exit 1"
   },
 
-実行
+実行方法
 node index.js　
 もしくは
 npm start
@@ -52,6 +52,6 @@ node --watch index.js
 その後
 npm run dev
 
-
-
 Visual Studio Code RESTクライアント
+アプリケーションのルートディレクトリに「 requests」という名前のディレクトリを作成します。
+すべてのRESTクライアントリクエストを、拡張子「.rest」が付いたファイルとしてそのディレクトリに保存します。
