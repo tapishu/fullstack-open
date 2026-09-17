@@ -4,6 +4,7 @@ const app = express();
 const cors = require('cors')
 
 app.use(cors())
+app.use(express.static('dist'))
 
 app.use(express.json())
 //送られてきた JSON 形式のデータ（POST リクエストなどの本文）を 
