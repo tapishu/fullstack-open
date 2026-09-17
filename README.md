@@ -83,3 +83,13 @@ const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
+
+・Renderの設定方法
+Create Web Service
+Public git repository 
+→ GITにアップロードしたURLを入力 https://github.com/tapishu/fullstack-open
+基本設定を入力
+正しい設定値
+Root directory: part3/Practice
+Build Command: npm install
+Start Command: npm start
