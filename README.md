@@ -64,3 +64,22 @@ app.use(requestLogger)
 
 アプリケーションにログ記録用のミドルウェア「morgan」
 npm install morgan
+以下で関数を指定し
+morgan.token("body",(request) => { //bodyというトークン（変数を定義）
+    return JSON.stringify(request.body) //POSTなどのbody付きリクエストが来るたびに呼ばれる。request.bodyを文字列化
+})
+呼び出し方法
+app.use(
+  morgan(':method :url :status :res[content-length] - :response-time ms :body') //:がついているのは全て変数
+)
+
+corsのインストール方法
+npm install cors
+設定と使用方法
+const cors = require('cors')
+app.use(cors())
+ポートの設定
+const PORT = process.env.PORT || 3001
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`)
+})
