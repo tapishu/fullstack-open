@@ -25,8 +25,10 @@ npm init
 package.jsonに以下を挿入
 "scripts": {
     "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
   },
+
+index.jsファイルの作成
+touch index.js
 
 実行方法
 node index.js　
@@ -55,3 +57,6 @@ npm run dev
 Visual Studio Code RESTクライアント
 アプリケーションのルートディレクトリに「 requests」という名前のディレクトリを作成します。
 すべてのRESTクライアントリクエストを、拡張子「.rest」が付いたファイルとしてそのディレクトリに保存します。
+
+アプリケーションにログ記録用のミドルウェア「morgan」
+npm install morgan
