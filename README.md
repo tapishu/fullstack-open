@@ -73,7 +73,8 @@ app.use(
   morgan(':method :url :status :res[content-length] - :response-time ms :body') //:がついているのは全て変数
 )
 
-corsのインストール方法
+corsのインストール方法　
+＊開発中（ローカル環境）では、フロントエンドとバックエンド(port 3001)が異なるドメイン（ポート番号）で動いていたため、ブラウザのセキュリティ機能により異なるポート間の通信は拒否される。corsを用いてフロントエンド側のアクセス(localhost:5173)を許可するように設定
 npm install cors
 設定と使用方法
 const cors = require('cors')
@@ -99,7 +100,7 @@ Start Command: npm start
 const baseUrl = "/api/notes";
 コード圧縮用のファイルを作成するためにbuildを実行
 npm run build
-distが作成される
+distが作成される *distはフロントエンドで作成したsrcだったりの画面表示させるコードをコンパクトにまとめたやつてきな
 今回は一つのサーバーにフロントエンドとバックエンドをまとめる
 このdistをバックエンドのルートディレクトリに保存
 バックエンドのindex.jsに
@@ -119,7 +120,7 @@ app.use(express.static('dist'))を追加
 }
 
 プロキシ
-開発モードではフロントエンドがlocalhost:5173のアドレスにあるため、バックエンドへのリクエストは誤ったアドレスlocalhost:5173/api/notesに送信されます。バックエンドはlocalhost:3001にあります。
+開発モードではフロントエンドがlocalhost:5173のアドレスにあるため、バックエンドへのリクエストは誤ったアドレスlocalhost:5173/api/notesに送信されます。バックエンドはlocalhost:3001にあります。開発モードのときだけ、Vite に「/api から始まるリクエストが来たら、バックエンド（http://localhost:3001）に自動で転送（代理送信）してね」と教え込む仕組みが プロキシ です。
 プロジェクトがViteで作成されている場合、この問題は簡単に解決できます。frontendディレクトリのvite.config.jsファイルに以下の宣言を追加するだけで十分です。
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
