@@ -168,3 +168,5 @@ dotenvライブラリを使用して環境変数を定義する
 npm install dotenv
 ライブラリを使用するには、プロジェクトのルートディレクトリに.envファイルを作成します。
 環境変数はこのファイル内で定義され、以下のような内容になります。
+MONGODB_URI=mongodb+srv://fullstack:thepasswordishere@cluster0.a5qfl.mongodb.net/noteApp?retryWrites=true&w=majority&appName=Cluster0
+PORT=3001
