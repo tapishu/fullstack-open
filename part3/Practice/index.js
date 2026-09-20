@@ -9,27 +9,27 @@ const Note = require('./models/note')
 
 
 // DO NOT SAVE YOUR PASSWORD TO GITHUB!!
-const password = process.argv[2]
-const url = `mongodb+srv://fullstack:${password}@fullstack.adeo6hc.mongodb.net/noteApp?retryWrites=true&w=majority&appName=fullstack`
+// const password = process.argv[2]
+// const url = `mongodb+srv://fullstack:${password}@fullstack.adeo6hc.mongodb.net/noteApp?retryWrites=true&w=majority&appName=fullstack`
 
-mongoose.set('strictQuery',false)
-mongoose.connect(url, { family: 4 })
+// mongoose.set('strictQuery',false)
+// mongoose.connect(url, { family: 4 })
 
-const noteSchema = new mongoose.Schema({
-  content: String,
-  important: Boolean,
-})
+// const noteSchema = new mongoose.Schema({
+//   content: String,
+//   important: Boolean,
+// })
 
-//IDやバージョン管理フィールドを表示させないためのフォーマット設定
-noteSchema.set('toJSON', {
-  transform: (document, returnedObject) => {
-    returnedObject.id = returnedObject._id.toString()
-    delete returnedObject._id
-    delete returnedObject.__v
-  }
-})
+// //IDやバージョン管理フィールドを表示させないためのフォーマット設定
+// noteSchema.set('toJSON', {
+//   transform: (document, returnedObject) => {
+//     returnedObject.id = returnedObject._id.toString()
+//     delete returnedObject._id
+//     delete returnedObject.__v
+//   }
+// })
 
-const Note = mongoose.model('Note', noteSchema)
+// const Note = mongoose.model('Note', noteSchema)
 
 app.use(cors())
 app.use(express.static('dist'))//distファイル内のindex.htmlを読み込み/に返す。以下に/で返す処理を記載してもここで返すため下まで行かない
