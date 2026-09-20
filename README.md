@@ -137,3 +137,32 @@ export default defineConfig({
     }
   },
 })
+
+・Part3 C.データをMongoDBに保存する
+
+Mongo DB の作成
+deploy your cluster
+クラウドサービスプロバイダや名前の選択
+Securityから編集用ユーザーの作成
+
+ネットワークアクセスの設定
+0.0.0.0/0
+
+clustorのconnectの画面よりコネクト用コードの確認
+
+Mongooseはオブジェクトドキュメントマッパー（ODM）と表現でき、
+このライブラリを使えばJavaScriptオブジェクトをMongoDBドキュメントとして保存するのは簡単です。
+npm install mongoose
+
+
+mongo.jsを作り内容を編集（テスト用）
+node mongo.js yourPassword
+で実行
+
+*一部mongo.js抜粋
+const url = `mongodb+srv://fullstack:${password}@fullstack.adeo6hc.mongodb.net/noteApp?retryWrites=true&w=majority&appName=fullstack`
+//接続先://ユーザー名:パスワード@接続先コード/DB名(noteApp)?(接続先オプション)&接続先コードの続き(appName=fullstack)
+
+
+dotenvライブラリを使用して環境変数を定義する
+
