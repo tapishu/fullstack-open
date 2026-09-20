@@ -165,4 +165,6 @@ const url = `mongodb+srv://fullstack:${password}@fullstack.adeo6hc.mongodb.net/n
 
 
 dotenvライブラリを使用して環境変数を定義する
-
+npm install dotenv
+ライブラリを使用するには、プロジェクトのルートディレクトリに.envファイルを作成します。
+環境変数はこのファイル内で定義され、以下のような内容になります。
