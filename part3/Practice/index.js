@@ -1,15 +1,43 @@
 //const http = require("http"); //モジュールのimport
+require('dotenv').config() //dotenv は、ノートモデルをインポートする前にインポートすることが重要
+
 const express = require("express");
 const app = express();
 const cors = require('cors')
+const mongoose = require('mongoose')
+const Note = require('./models/note')
+
+
+// DO NOT SAVE YOUR PASSWORD TO GITHUB!!
+const password = process.argv[2]
+const url = `mongodb+srv://fullstack:${password}@fullstack.adeo6hc.mongodb.net/noteApp?retryWrites=true&w=majority&appName=fullstack`
+
+mongoose.set('strictQuery',false)
+mongoose.connect(url, { family: 4 })
+
+const noteSchema = new mongoose.Schema({
+  content: String,
+  important: Boolean,
+})
+
+//IDやバージョン管理フィールドを表示させないためのフォーマット設定
+noteSchema.set('toJSON', {
+  transform: (document, returnedObject) => {
+    returnedObject.id = returnedObject._id.toString()
+    delete returnedObject._id
+    delete returnedObject.__v
+  }
+})
+
+const Note = mongoose.model('Note', noteSchema)
 
 app.use(cors())
-
+app.use(express.static('dist'))//distファイル内のindex.htmlを読み込み/に返す。以下に/で返す処理を記載してもここで返すため下まで行かない
 
 app.use(express.json())
 //送られてきた JSON 形式のデータ（POST リクエストなどの本文）を 
 // JavaScript のオブジェクトに自動で変換してくれる設定です
-app.use(express.static('dist'))
+
 let notes = [
   {
     id: "1",
@@ -32,23 +60,35 @@ let notes = [
 //   response.send("<h1>Hello World!</h1>");
 // });
 
-app.get("/api/notes", (request, response) => {
-  response.json(notes);
-});
+// app.get("/api/notes", (request, response) => {
+//   response.json(notes);
+// });
 
-app.get("/api/notes/:id", (request, response) => {
-  //「:変数」を使うことで可変の変数として扱える。以下リクエストでも使用可能。
-  const id = request.params.id; //requestを介してオブジェクトにアクセス。
-  //params は Express が用意してくれている「URL のコロン（:）で指定した変数たちをまとめて入れておく専用の箱（オブジェクト）」の名前
-  const note = notes.find((note) => note.id === id);
+app.get('/api/notes', (request, response) => {
+  Note.find({}).then(notes => {
+    response.json(notes)
+  })
+})
 
-  //未知のIDを入力すると200を返してしまうので、404を返すように変更
-  if (note) {
-    response.json(note); //responseを介して応答
-  } else {
-    response.status(404).end(); //データを送信せずにリクエストに応答するにはendメソッドを使用
-  }
-});
+// app.get("/api/notes/:id", (request, response) => {
+//   //「:変数」を使うことで可変の変数として扱える。以下リクエストでも使用可能。
+//   const id = request.params.id; //requestを介してオブジェクトにアクセス。
+//   //params は Express が用意してくれている「URL のコロン（:）で指定した変数たちをまとめて入れておく専用の箱（オブジェクト）」の名前
+//   const note = notes.find((note) => note.id === id);
+
+//   //未知のIDを入力すると200を返してしまうので、404を返すように変更
+//   if (note) {
+//     response.json(note); //responseを介して応答
+//   } else {
+//     response.status(404).end(); //データを送信せずにリクエストに応答するにはendメソッドを使用
+//   }
+// });
+
+app.get('/api/notes/:id', (request, response) => {
+  Note.findById(request.params.id).then(note => {
+    response.json(note)
+  })
+})
 
 const generateId = () => {
   const maxId = notes.length > 0
@@ -66,15 +106,22 @@ app.post('/api/notes', (request, response) => {
     })
   }
 
-  const note = {
+//   const note = {
+//     content: body.content,
+//     important: body.important || false,
+//     id: generateId(),
+//   }
+//   notes = notes.concat(note)
+//   response.json(note)
+// })
+  const note = new Note({
     content: body.content,
     important: body.important || false,
-    id: generateId(),
-  }
+  })
 
-  notes = notes.concat(note)
-
-  response.json(note)
+  note.save().then(savedNote => {
+    response.json(savedNote)
+  })
 })
 
 app.delete("/api/notes/:id", (request, response) => {
@@ -89,7 +136,7 @@ app.delete("/api/notes/:id", (request, response) => {
 //   console.log(`Server running on port ${PORT}`);
 // });
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
