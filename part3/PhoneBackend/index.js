@@ -61,29 +61,37 @@ Person.find({}).then(persons => {
 });
 
 app.get("/api/persons/:id",(request, response)=>{
-    const id = request.params.id
-    const person = persons.find((p)=> p.id ===id)
-        console.log("pass")
+//     const id = request.params.id
+//     const person = persons.find((p)=> p.id ===id)
+//     console.log("pass")
+  Person.findById(request.params.id).then(person => {
+    response.json(person)
+  }
+)
 if (person){
     console.log("sucess")
     response.json(person)
 } else{
-            console.log("fail")
+    console.log("fail or nothing")
     response.status(404).end()
-
 }
+
+ 
 })
 
 app.get("/info", (request, response) => {
-    const today = new Date()
-    const n = persons.length
-  response.send(`
-    <div>
-        <p>Phonebook has info for ${n} people</p>
-        <p>${today}</p>
-    </div>
-  `);
-});
+    // const today = new Date()
+    // const n = persons.length
+Person.countDocuments({}).then(count =>{
+const today = new Date()
+      response.send(`
+        <div>
+          <p>Phonebook has info for ${count} people</p>
+          <p>${today}</p>
+        </div>
+      `)
+    })
+})
 
 const generateId =() =>{
 const randomId = Math.floor(Math.random() * 10000);
