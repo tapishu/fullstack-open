@@ -1,7 +1,13 @@
+require('dotenv').config() //dotenv は、ノートモデルをインポートする前にインポートすることが重要
+
+
 const express = require("express");
 const app = express();
 const morgan = require("morgan")
 const cors = require('cors')
+const mongoose = require('mongoose')
+const Person = require('./models/person')
+
 
 app.use(express.static("dist"))
 app.use(cors())
@@ -50,7 +56,10 @@ let persons = [
 // });
 
 app.get("/api/persons", (request, response) => {
-  response.json(persons);
+//  response.json(persons);
+Person.find({}).then(persons => {
+    response.json(persons)
+})
 });
 
 app.get("/api/persons/:id",(request, response)=>{
@@ -118,7 +127,7 @@ persons = persons.filter((p)=>p.id !==id)
 response.status(204).end()
 })
 
-const PORT = process.env.PORT || 3002
+const PORT = process.env.PORT
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
