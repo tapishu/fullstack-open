@@ -65,9 +65,7 @@ app.get("/api/persons/:id",(request, response)=>{
 //     const person = persons.find((p)=> p.id ===id)
 //     console.log("pass")
   Person.findById(request.params.id).then(person => {
-    response.json(person)
-  }
-)
+
 if (person){
     console.log("sucess")
     response.json(person)
@@ -75,8 +73,7 @@ if (person){
     console.log("fail or nothing")
     response.status(404).end()
 }
-
- 
+  })
 })
 
 app.get("/info", (request, response) => {
@@ -93,10 +90,10 @@ const today = new Date()
     })
 })
 
-const generateId =() =>{
-const randomId = Math.floor(Math.random() * 10000);
-    return String(randomId)
-}
+// const generateId =() =>{
+// const randomId = Math.floor(Math.random() * 10000);
+//     return String(randomId)
+// }
 
 app.post("/api/persons",(request,response) =>{
     const body =request.body
@@ -111,26 +108,32 @@ app.post("/api/persons",(request,response) =>{
             error: 'number is missing'
         })
     }
-    const nameExist= persons.find((p)=> p.name===body.name)
-        if(nameExist){
-                  return response.status(400).json({
-            error: 'that name is been registered'
-        }) 
-        }
-    const person = {
-        id:generateId(),
+    // const nameExist= persons.find((p)=> p.name===body.name)
+    //     if(nameExist){
+    //               return response.status(400).json({
+    //         error: 'that name is been registered'
+    //     }) 
+    //     }
+    //const person = {
+    const person = new Person({
+
+       // id:generateId(),
         name:body.name,
         number:body.number,
-    }
-    persons=persons.concat(person)
-    response.json(person)
+    })
+    //persons=persons.concat(person)
+    person.save().then(savedPerson =>{
+    response.json(savedPerson)
+    })
+    // response.json(person)
 })
 
 app.delete("/api/persons/:id",(request,response) =>{
-const id = request.params.id
-persons = persons.filter((p)=>p.id !==id)
-
+// const id = request.params.id
+// persons = persons.filter((p)=>p.id !==id)
+Person.findByIdAndDelete(request.params.id).then(result =>{
 response.status(204).end()
+})
 })
 
 const PORT = process.env.PORT
