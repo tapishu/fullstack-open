@@ -19,8 +19,23 @@ mongoose.connect(url, { family: 4 })
 
 const personSchema = new mongoose.Schema({
 //   id: String,
-  name: String,
-  number: String,
+  //name: String,
+  name :{
+    type : String,
+    minLength: 3,
+    required : true
+  },
+  number: {
+    type: String,
+    minLength : 8,
+    required : true,
+    validate:{
+        validator: function(v){
+            return /ˆ\d{2,3}-\d+$/.test(v)
+        },
+        message: props => `${props.value} is invalid '09-1234567' or '040-1234567'`
+    }
+  }
 })
 
 // personSchema.set('toJSON', {
