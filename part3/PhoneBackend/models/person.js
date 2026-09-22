@@ -31,7 +31,7 @@ const personSchema = new mongoose.Schema({
     required : true,
     validate:{
       validator: function(v){
-        return /^\d{2,3}-\d+$/.test(v)
+        return /^\d{2,3}-\d{5,}$/.test(v)
       },
       message: props => `${props.value} is invalid '09-1234567' or '040-1234567'`
     }

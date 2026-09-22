@@ -99,16 +99,16 @@ app.get('/info', (request, response) => {
 app.post('/api/persons',(request,response,next) => {
   const body =request.body
 
-  if(!body.name){
-    return response.status(400).json({
-      error: 'name is missing'
-    })
-  }
-  if(!body.number){
-    return response.status(400).json({
-      error: 'number is missing'
-    })
-  }
+  //   if(!body.name){
+  //     return response.status(400).json({
+  //       error: 'name is missing'
+  //     })
+  //   }
+  //   if(!body.number){
+  //     return response.status(400).json({
+  //       error: 'number is missing'
+  //     })
+  //   }
   // const nameExist= persons.find((p)=> p.name===body.name)
   //     if(nameExist){
   //               return response.status(400).json({
