@@ -177,11 +177,61 @@ npm install eslint @eslint/js --save-dev
 以下のコマンドでデフォルトのESLint設定
 npx eslint --init
 
+設定ファイルeslint.config.mjsを現在の形式から以下のように書き換えましょう。
+----
+import globals from 'globals'
+
+export default [
+  {
+    files: ['**/*.js'],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: { ...globals.node },
+      ecmaVersion: 'latest',
+    },
+  },
+]
+----
+ESLintの推奨設定と独自の設定を併用したいと考えています。以前インストールした@eslint/jsパッケージには、ESLint用の事前定義済み設定が含まれています。これをインポートして、設定ファイルで有効にします。
+---
+import globals from 'globals'
+import js from '@eslint/js'
+// ...
+
+export default [
+  js.configs.recommended,
+  {
+    // ...
+  },
+---
 コードスタイルに関するルールセットを定義するプラグインをインストール
 npm install --save-dev @stylistic/eslint-plugin
+プラグインをインポートして有効化し、以下の4つのコードスタイルルールを追加してください。
+---
+import globals from 'globals'
+import js from '@eslint/js'
+import stylisticJs from '@stylistic/eslint-plugin'
 
+export default [
+  {
+    // ...
+
+    plugins: { 
+      '@stylistic/js': stylisticJs,
+    },
+    rules: { 
+      '@stylistic/js/indent': ['error', 2],
+      '@stylistic/js/linebreak-style': ['error', 'unix'],
+      '@stylistic/js/quotes': ['error', 'single'],
+      '@stylistic/js/semi': ['error', 'never'],
+    }, 
+  },
+]
+---
 プラグインプロパティを使用すると、ESLintのコアライブラリにはないカスタムルール、設定、その他の機能を追加することで、ESLintの機能を拡張できる
 今回は、 ESLintにJavaScriptのスタイルルールを追加する@stylistic/eslint-pluginをインストール
+
+
 index.jsのようなファイルの検査と検証は、以下のコマンドで行うことができます。
 npx eslint index.js
 
@@ -197,6 +247,20 @@ npx eslint index.js
 ---
 これで、`npm run lint`コマンドはプロジェクト内のすべてのファイルをチェックするようになります。
 VS CodeのESLintプラグインは、スタイル違反箇所を赤い線で下線表示しますもおすすめ
+
+コマンド実行時には、 distディレクトリ内のファイルもチェックされます。これは望ましくないため、無視したいディレクトリとファイルの配列を指定するignoresプロパティを持つオブジェクトを追加することで実現できます。
+---
+export default [
+  js.configs.recommended,
+  {
+    files: ['**/*.js'],
+    // ...
+  },
+  { 
+    ignores: ['dist/**'], 
+  },
+]
+---
 
 等号のチェックにトリプルイコール演算子以外のものが使用された場合に警告を発するeqeqeqルールを追加しましょう。このルールは、設定ファイルのrulesフィールドに追加します。
 ---
