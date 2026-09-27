@@ -298,3 +298,54 @@ console.logコマンドについて警告するルールが含まれています
       'no-console': 'off',
 ---
 no-consoleルールを無効にすることで、ESLintが問題としてフラグを立てることなくconsole.log文を使用できるようになります。
+
+
+Part4
+データベースをモックしてバックエンドテストを実装することが有益な場合があります。これに使用できるライブラリの1つにmongodb-memory-server
+
+テスト実行時にNODE_ENVにtestという値を取得するように、ノートアプリケーションのpackage.jsonファイル内のスクリプトを変更
+{
+  // ...
+  "scripts": {
+    "start": "NODE_ENV=production node index.js",
+    "dev": "NODE_ENV=development node --watch index.js",
+    "test": "NODE_ENV=test node --test",
+    "lint": "eslint ."
+  }
+  // ...
+}
+
+プロジェクトの依存関係としてcross-envパッケージをインストールすることで、この問題を解決できます。
+npm install cross-env
+
+  "scripts": {
+    "start": "cross-env NODE_ENV=production node index.js",
+    "dev": "cross-env NODE_ENV=development node --watch index.js",
+    "test": "cross-env  NODE_ENV=test node --test",
+    "lint": "eslint ."
+  },
+  // ...
+
+  utils/config.jsへの変更
+  const MONGODB_URI = process.env.NODE_ENV === 'test' 
+  ? process.env.TEST_MONGODB_URI
+  : process.env.MONGODB_URI
+
+
+  envファイルには、開発用データベースとテスト用データベースのデータベース アドレスを表す個別の変数が含まれています。
+  takahashishuuta@MacBookAir part4 % cat .env
+MONGODB_URI=mongodb+srv://fullstack:Shutapioca0821@fullstack.adeo6hc.mongodb.net/noteApp?retryWrites=true&w=majority&appName=fullstack
+PORT=3001
+TEST_MONGODB_URI=mongodb+srv://fullstack:Shutapioca0821@fullstack.adeo6hc.mongodb.net/testNoteApp?retryWrites=true&w=majority&appName=fullstack
+
+スーパーテスト
+APIをテストするためのテストを作成するのに、supertestパッケージを利用
+npm install --save-dev supertest
+
+
+ユーザーの作成
+パスワードハッシュを生成するために、bcryptパッケージをインストール
+npm install bcrypt
+
+JSON Webトークンを生成できるjsonwebtokenライブラリをインストール
+npm install jsonwebtoken
