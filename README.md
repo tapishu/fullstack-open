@@ -349,3 +349,78 @@ npm install bcrypt
 
 JSON Webトークンを生成できるjsonwebtokenライブラリをインストール
 npm install jsonwebtoken
+
+
+Part5
+Vitestとウェブブラウザをシミュレートするjsdomライブラリをインストールしましょう。
+npm install --save-dev vitest jsdom
+Vitestに加えて、テスト目的でコンポーネントをレンダリングするのに役立つ別のテストライブラリも必要です。現在、このための最良の選択肢は、近年急速に人気が高まっているreact-testing-libraryです。また、jest-domライブラリを使用してテストの表現力を拡張することも検討する価値があります。
+npm install --save-dev @testing-library/react @testing-library/jest-dom
+
+jsonファイルへの追記
+  "scripts": {
+    // ...
+    "test": "vitest run"
+  }
+  // ...
+
+  プロジェクトルートに以下の内容のファイルtestSetup.jsを作成しましょう。
+----
+import { afterEach } from 'vitest'
+import { cleanup } from '@testing-library/react'
+import '@testing-library/jest-dom/vitest'
+
+afterEach(() => {
+  cleanup()
+})
+----
+vite.config.jsファイルを以下のように展開します。
+export default defineConfig({
+  // ...
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './testSetup.js', 
+  }
+})
+
+
+ユーザー入力のシミュレーションを少し簡単にするライブラリ「user-event」をインストールしてみましょう。
+npm install --save-dev @testing-library/user-event
+
+以下のコマンドでテストを実行することで、テストのカバレッジを簡単に確認できます。
+npm test -- --coverage
+
+
+テストを初期化しています
+バックエンドテストやReactフロントエンドで行うユニットテストとは異なり、エンドツーエンドテストはコードと同じnpmプロジェクトに配置する必要はありません。npm initコマンドを使用して、E2Eテスト専用のプロジェクトを完全に別個に作成しましょう。次に、新しいプロジェクトディレクトリで以下のコマンドを実行してPlaywrightをインストールします。
+npm init playwright@latest
+
+package.jsonに、テストとテストレポートを実行するための npm スクリプトを定義しましょう。
+
+{
+  // ...
+  "scripts": {
+    "test": "playwright test",
+    "test:report": "playwright show-report"
+  },
+  // ...
+}
+
+テストのレポート
+npm run test:report
+
+使用するブラウザエンジンは、コマンドラインパラメータで指定できます。
+npm test -- --project chromium
+
+
+テストを開発する際には、待機時間を数秒に短縮する方が賢明な場合があります。ドキュメントによると、これはplaywright.config.jsファイルを以下のように変更することで実現できます。
+
+export default defineConfig({
+  // ...
+  timeout: 3000,
+  fullyParallel: false,
+  workers: 1,
+  // ...
+})
+
