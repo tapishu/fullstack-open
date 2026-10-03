@@ -445,3 +445,13 @@ IUフレームワーク
 
 npm install @mui/material @emotion/react @emotion/styled
 
+
+これまで見てきた方法に加えて、Reactアプリにスタイルを適用する方法は他にもあります。
+
+ES6のタグ付きテンプレートリテラル構文を利用するstyled -componentsライブラリは、スタイルを定義するための興味深いアプローチを提供します。
+
+styled-componentsをインストールして、メモアプリ（MaterialUIをインストールする前のバージョン）にいくつかのスタイル変更を加えてみましょう。まず、使用するコンポーネントのスタイル定義を2つ作成します。
+
+
+npm install styled-components
+
