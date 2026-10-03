@@ -409,6 +409,7 @@ package.jsonに、テストとテストレポートを実行するための npm 
 
 テストのレポート
 npm run test:report
+ npm test -- --ui
 
 使用するブラウザエンジンは、コマンドラインパラメータで指定できます。
 npm test -- --project chromium
@@ -423,4 +424,24 @@ export default defineConfig({
   workers: 1,
   // ...
 })
+
+
+実際にバックエンド側でテストを行うためにpackage.jsonにテストスクリプトを記載
+    "start:test": "cross-env NODE_ENV=test node --watch index.js"
+
+React Routerをインストールする：
+
+npm install react-router-dom
+
+useMatch() が <App> の直下で動くためには、<App/> 全体が <Router> (BrowserRouter) の内側 でレンダリングされている必要があります。
+
+現在、main.jsx（または index.js）側で <App/> が <Router> で囲まれていないことが原因です。
+
+
+IUフレームワーク
+リMaterialUIを見てみましょう。これは、GoogleのMaterial Designデザイン言語を実装したものです。
+
+ライブラリをインストールしましょう。
+
+npm install @mui/material @emotion/react @emotion/styled
 
