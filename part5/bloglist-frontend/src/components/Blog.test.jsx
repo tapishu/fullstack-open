@@ -2,8 +2,9 @@ import { render, screen } from '@testing-library/react'
 //render: コンポーネントをテスト用の仮想画面（DOM）に描画するための関数です。
 //screen: 描画された仮想画面の中から要素を探すためのオブジェクトです。
 import Blog from './Blog'
-import userEvent from '@testing-library/user-event'
-import { describe, test, expect, vi } from 'vitest'
+// import userEvent from '@testing-library/user-event'
+import {  test, expect, vi } from 'vitest'
+
 const blog = {
   title: 'Component testing',
   author: 'Test Author',

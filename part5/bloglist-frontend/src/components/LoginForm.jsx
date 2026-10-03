@@ -8,16 +8,16 @@ const LoginForm = (props) => {
       <h2>Login</h2>
       <form onSubmit={props.handleSubmit}>
         <div>
-        <TextField
-        label="username"
-        value={props.username}
-        onChange={props.handleUsernameChange}/>
+          <TextField
+            label="username"
+            value={props.username}
+            onChange={props.handleUsernameChange}/>
         </div>
         <div>
-        <TextField
-        label ="password"
-        value={props.password}
-        onChange={props.handlePasswordChange}/>
+          <TextField
+            label ="password"
+            value={props.password}
+            onChange={props.handlePasswordChange}/>
         </div>
         {/* <div>
           <label>
@@ -39,7 +39,7 @@ const LoginForm = (props) => {
             />
           </label>
         </div> */}
-          <div>
+        <div>
           <Button type="submit" variant ="contained" style={{ marginTop: 10 }} color='primary'>login</Button>
         </div>
       </form>

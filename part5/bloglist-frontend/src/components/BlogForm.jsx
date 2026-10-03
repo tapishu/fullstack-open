@@ -22,28 +22,28 @@ const BlogForm =({ createBlog }) => {
   }
 
 
-        
+
   return(
     <div>
       <h2>create new</h2>
       <form onSubmit={handleSubmit}>
         <div>
-        <TextField
-        label="title:"
-              value={title}
-              onChange={({ target }) => setTitle(target.value)}/>
+          <TextField
+            label="title:"
+            value={title}
+            onChange={({ target }) => setTitle(target.value)}/>
         </div>
-          <div>
-        <TextField
-        label="author:"
-              value={author}
-              onChange={({ target }) => setAuthor(target.value)}/>
+        <div>
+          <TextField
+            label="author:"
+            value={author}
+            onChange={({ target }) => setAuthor(target.value)}/>
         </div>
-          <div>
-        <TextField
-        label="url:"
-              value={url}
-              onChange={({ target }) => setUrl(target.value)}/>
+        <div>
+          <TextField
+            label="url:"
+            value={url}
+            onChange={({ target }) => setUrl(target.value)}/>
         </div>
         <Button type="submit" variant ="contained" style={{ marginTop: 10 }} color='primary'>create</Button>
 

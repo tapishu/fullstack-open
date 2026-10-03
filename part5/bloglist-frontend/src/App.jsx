@@ -1,4 +1,4 @@
-import { useState, useEffect,useRef } from 'react'
+import { useState, useEffect } from 'react'
 import Blog from './components/Blog'
 import blogService from './services/blogs'
 import loginService from './services/login'
@@ -14,8 +14,8 @@ import { Container, Toolbar } from '@mui/material'
 import { Alert,AppBar,Button } from '@mui/material'
 
 
-        // username: 'mluukkai',
-        // password: 'salainen'
+// username: 'mluukkai',
+// password: 'salainen'
 
 const Notification = ({ notification }) => {
   if (!notification) {
@@ -23,8 +23,8 @@ const Notification = ({ notification }) => {
   }
   return (
     <div className={notification.type === 'success' ? 'success' : 'error'}>
-      <Alert style={{marginTop: 10, marginBottom: 10}} severity={notification.type}>
-      {notification.message}
+      <Alert style={{ marginTop: 10, marginBottom: 10 }} severity={notification.type}>
+        {notification.message}
       </Alert>
     </div>
   )
@@ -36,7 +36,7 @@ const App = () => {
   const [password, setPassword] = useState('')
   const [user, setUser] = useState(null)
   const [notification, setNotification] = useState(null)
-  const blogFormRef = useRef() // Togglableの開閉用
+  //const blogFormRef = useRef() // Togglableの開閉用
   const navigate = useNavigate() // ログイン完了後の画面遷移用
 
   const notify = (message, type = 'success') => {
@@ -90,15 +90,15 @@ const App = () => {
   const handleCreateBlog = async (blogObject) => {
     // blogFormRef.current.toggleVisibility()
     try{
-    const returnedBlog = await blogService.create(blogObject)
-        setBlogs(blogs.concat(returnedBlog))
-        notify(`a new blog ${returnedBlog.title} by ${returnedBlog.author} added`, 'success')
-        navigate('/')
+      const returnedBlog = await blogService.create(blogObject)
+      setBlogs(blogs.concat(returnedBlog))
+      notify(`a new blog ${returnedBlog.title} by ${returnedBlog.author} added`, 'success')
+      navigate('/')
     } catch(exception){
-        notify('failed to create blog', 'error')
-        console.error(exception)
-        navigate('/')
-      }
+      notify('failed to create blog', 'error')
+      console.error(exception)
+      navigate('/')
+    }
   }
 
   const handleLike = async (blog) => {
@@ -143,54 +143,54 @@ const App = () => {
 
   return (
     <Container>
-    <div>
       <div>
-        <AppBar position="static">
-          <Toolbar>
-            <div style={{ flexGrow: 1, fontSize: '1.25rem', fontWeight: 'bold' }}>
+        <div>
+          <AppBar position="static">
+            <Toolbar>
+              <div style={{ flexGrow: 1, fontSize: '1.25rem', fontWeight: 'bold' }}>
       Blog App
-    </div>
+              </div>
 
-            <Button color="inherit" component={Link} to ="/">blogs</Button>
-            {user && <Button color="inherit" component={Link} to="/create">new blog</Button>}
-            {user? (<Button color="inherit" onClick={handleLogout}>logout</Button>):
-             (<Button color="inherit" component={Link} to="/login">login</Button>)}
-          </Toolbar>
-        </AppBar>
-        {/* <Link to="/">blogs</Link>{' '}
+              <Button color="inherit" component={Link} to ="/">blogs</Button>
+              {user && <Button color="inherit" component={Link} to="/create">new blog</Button>}
+              {user? (<Button color="inherit" onClick={handleLogout}>logout</Button>):
+                (<Button color="inherit" component={Link} to="/login">login</Button>)}
+            </Toolbar>
+          </AppBar>
+          {/* <Link to="/">blogs</Link>{' '}
         {user && (<Link to="/create">new blog</Link>)}{' '}
         {user?  (<button onClick={handleLogout}>logout</button>): (<Link to="/login">login</Link>)} */}
+        </div>
+        <div>
+          <Notification notification={notification}/>
+
+          <Routes>
+            <Route path="/" element={<BlogList blogs={blogs} />} />
+            <Route path="/login" element={<LoginForm
+              username={username}
+              password={password}
+              handleUsernameChange={({ target }) => setUsername(target.value)}
+              handlePasswordChange={({ target }) => setPassword(target.value)}
+              handleSubmit={handleLogin}
+            />}/>
+            <Route path="/create" element={<BlogForm createBlog={handleCreateBlog}/>}/>
+
+
+            <Route
+              path="/blogs/:id"
+              element={
+                <Blog
+                  blog={blog}
+                  handleLike={() => handleLike(blog)}
+                  handleRemove={() => handleRemove(blog)}
+                  currentUser={user}
+                />
+              }
+            />
+          </Routes>
+        </div>
+
       </div>
-      <div>
-        <Notification notification={notification}/>
-
-        <Routes>
-          <Route path="/" element={<BlogList blogs={blogs} />} />
-          <Route path="/login" element={<LoginForm
-            username={username}
-            password={password}
-            handleUsernameChange={({ target }) => setUsername(target.value)}
-            handlePasswordChange={({ target }) => setPassword(target.value)}
-            handleSubmit={handleLogin}
-          />}/>
-          <Route path="/create" element={<BlogForm createBlog={handleCreateBlog}/>}/>
-
-
-          <Route
-            path="/blogs/:id"
-            element={
-              <Blog
-                blog={blog}
-                handleLike={() => handleLike(blog)}
-                handleRemove={() => handleRemove(blog)}
-                currentUser={user}
-              />
-            }
-          />
-        </Routes>
-      </div>
-
-    </div>
     </Container>
   )
 }
