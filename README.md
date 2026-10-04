@@ -9,7 +9,7 @@ npm create vite@latest
 Open Project:
 npm run dev
 
-Install axios:
+Install axios:ブラウザや Node.js から Web サーバーと通信（HTTP リクエスト）を行うための JavaScript ライブラリ
 npm install axios
 
 Install json server?
@@ -21,6 +21,7 @@ npm run server
 part3 Backend
 
 Create project
+シンプルなバックエンド（Node.js/Express）や、プレーンな JavaScript ライブラリを作る
 npm init
 package.jsonに以下を挿入
 "scripts": {
@@ -451,7 +452,11 @@ npm install @mui/material @emotion/react @emotion/styled
 ES6のタグ付きテンプレートリテラル構文を利用するstyled -componentsライブラリは、スタイルを定義するための興味深いアプローチを提供します。
 
 styled-componentsをインストールして、メモアプリ（MaterialUIをインストールする前のバージョン）にいくつかのスタイル変更を加えてみましょう。まず、使用するコンポーネントのスタイル定義を2つ作成します。
-
-
 npm install styled-components
+
+
+Part6
+
+新しいViteアプリケーションを作成し、Zustandをインストールします。
+npm install zustand
 
