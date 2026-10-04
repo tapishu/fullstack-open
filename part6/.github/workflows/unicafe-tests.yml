@@ -1,0 +1,5 @@
+name: Unicafe tests
+
+on:
+  push:
+    branches: [main] 
