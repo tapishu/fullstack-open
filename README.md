@@ -460,3 +460,14 @@ Part6
 新しいViteアプリケーションを作成し、Zustandをインストールします。
 npm install zustand
 
+useNotesに もかなりの量のロジックが含まれているため、テストはReact Testing Libraryのフックを含むモジュール
+npm install --save-dev vitest @testing-library/react jsdom
+
+テスト環境の設定を vite.config.jsに追加しましょう。
+  test: {
+    environment: 'jsdom',
+  },
+
+テストの実行は
+ npx vitest run
+
