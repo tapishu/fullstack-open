@@ -1,15 +1,12 @@
 import AnecdoteForm from './components/AnecdoteForm'
 import Notification from './components/Notification'
 import { useAnecdotes } from './hooks/useAnecdotes'
-
 // Anecdotes
 // anecdotes
 const App = () => {
 
-  const {anecdotes,isPending,isError,voteAnecdote} = useAnecdotes()
-  // const handleVote = (anecdote) => {
-  //   console.log('vote')
-  // }
+  const { anecdotes, isPending, isError, voteAnecdote } = useAnecdotes()
+
     if (isPending) {
     return <div>loading data...</div>
   }
