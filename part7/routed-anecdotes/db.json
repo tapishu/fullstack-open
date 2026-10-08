@@ -1,18 +1,33 @@
 {
   "anecdotes": [
     {
-      "content": "If it hurts, do it more often",
-      "author": "Jez Humble",
-      "info": "https://martinfowler.com/bliki/FrequencyReducesDifficulty.html",
+      "content": "harry potter",
+      "author": "jkrolloung",
+      "info": "gajeorgaourhgo",
       "votes": 0,
-      "id": 1
+      "id": "QZKPKyefZwY"
     },
     {
-      "content": "Premature optimization is the root of all evil",
-      "author": "Donald Knuth",
-      "info": "http://wiki.c2.com/?PrematureOptimization",
+      "content": "resident evil",
+      "author": "koyama",
+      "info": "heirghauhruhgaou",
       "votes": 0,
-      "id": 2
+      "id": "oDdWmtTjlSQ"
+    },
+    {
+      "content": "an anecdote created by playwright 1791483510972",
+      "author": "Playwright",
+      "info": "https://playwright.dev",
+      "votes": 0,
+      "id": "tusUgVJoY20"
+    },
+    {
+      "content": "an anecdote created by playwright 1791483535766",
+      "author": "Playwright",
+      "info": "https://playwright.dev",
+      "votes": 0,
+      "id": "DZBrm2k5EiE"
     }
-  ]
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
 }
