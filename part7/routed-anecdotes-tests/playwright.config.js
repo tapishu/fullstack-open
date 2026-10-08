@@ -20,7 +20,7 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
     },
     {
-      command: 'npm run start:test',
+      command: 'npm run dev',
       cwd: '../routed-anecdotes',
       url: 'http://localhost:5173',
       reuseExistingServer: !process.env.CI,
