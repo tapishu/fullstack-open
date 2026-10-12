@@ -1,0 +1,22 @@
+{
+  "name": "bloglist-allinon",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix client\" \"npm run dev --prefix server\"",
+    "build": "npm run build --prefix client",
+    "start": "NODE_ENV=production node server/index.js",
+"start:test": "NODE_ENV=test node server/index.js"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6",
+    "prettier": "^3.9.10"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.104.1"
+  }
+}
