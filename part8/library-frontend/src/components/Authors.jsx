@@ -60,14 +60,16 @@ changeBorn({variables:{name, setBornTo:Number(born)}})
       <form onSubmit={submit}>
       <div>
         name{/* name <input value ={name} onChange={({target})=>{setName(target.value)}} /> */}
-      <select value ={name} onChange={({target})=>{setName(target.value)}}>
+      <select name ="name" value ={name} onChange={({target})=>{setName(target.value)}}>
         {authors.map((a)=> (
           <option key={a.id} value={a.name}>{a.name}</option>
         ))}
         </select>
       </div>
       <div>
+        <label>
         born <input value={born} onChange={({target})=>{setBorn(target.value)}} />
+      </label>
       </div>
       <button type='submit'>update author</button>
       </form>

@@ -47,7 +47,7 @@ book.genres.forEach((genre)=>{
   return (
     <div>
       <h2>books</h2>
-
+      {showGenre === "all genres" ? (<h3>All genres</h3>) : (<h3>in genre {showGenre}</h3>)}
       <table>
         <tbody>
           <tr>

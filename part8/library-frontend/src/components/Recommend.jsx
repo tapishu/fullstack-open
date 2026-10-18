@@ -34,8 +34,9 @@ if (result_Me.loading || result_Books.loading) {
 const recommendBooks = result_Books.data.allBooks  
 return (
     <div>
-      <h2>Recommend books</h2>
-<h4>books in your favourite genere patterns</h4>
+      <h2>recommendations books</h2>
+<h4>books in your favorite genre</h4>
+<h5>{favoriteGenre}</h5>
       <table>
         <tbody>
           <tr>

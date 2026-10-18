@@ -35,13 +35,14 @@ const App = () => {
 
   return (
     <div>
+      <Notify errorMessage={errorMessage}/>
       <div>
         <button onClick={() => setPage('authors')}>authors</button>
         <button onClick={() => setPage('books')}>books</button>
-        <button onClick={() => setPage('recommend')}>recommend</button>
 
         {token ? (
         <>
+                <button onClick={() => setPage('recommend')}>recommend</button>
         <button onClick={() => setPage('add')}>add book</button>
                     <button onClick={onLogout}>logout</button>
                     </>): 
@@ -58,6 +59,7 @@ const App = () => {
 
       <LoginForm show={page ==="login"} setToken={handleLogin}
           setError={notify}/>
+      
     </div>
   )
 }

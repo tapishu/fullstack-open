@@ -49,28 +49,35 @@ createBook({variables:{title,author,published:Number(published),genres}})
     <div>
       <form onSubmit={submit}>
         <div>
+          <label>
           title
           <input
             value={title}
             onChange={({ target }) => setTitle(target.value)}
           />
+          </label>
         </div>
         <div>
+          <label>
           author
           <input
             value={author}
             onChange={({ target }) => setAuthor(target.value)}
           />
+          </label>
         </div>
         <div>
+          <label>
           published
           <input
             type="number"
             value={published}
             onChange={({ target }) => setPublished(target.value)}
           />
+          </label>
         </div>
         <div>
+          <label>
           <input
             value={genre}
             onChange={({ target }) => setGenre(target.value)}
@@ -78,6 +85,7 @@ createBook({variables:{title,author,published:Number(published),genres}})
           <button onClick={addGenre} type="button">
             add genre
           </button>
+          </label>
         </div>
         <div>genres: {genres.join(' ')}</div>
         <button type="submit">create book</button>
