@@ -471,3 +471,453 @@ npm install --save-dev vitest @testing-library/react jsdom
 テストの実行は
  npx vitest run
 
+
+TanStackクエリライブラリを使用したサーバー上のデータ管理
+それでは、  TanStackクエリを使用します。（新しいタブで開きます） サーバーから取得したデータを保存および管理するためのライブラリ。
+npm install @tanstack/react-query
+ ライブラリ関数をアプリケーション全体に渡すには、main.jsxファイルにいくつかの変更を加える 必要があります
+ ------------------------
+import { createRoot } from 'react-dom/client'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+import App from './App.jsx'
+
+const queryClient = new QueryClient()
+
+createRoot(document.getElementById('root')).render(
+  <QueryClientProvider client={queryClient}>
+    <App />
+  </QueryClientProvider>
+)
+ ------------------------
+
+
+ESLint が「コードの書き方ルールチェック（バグになりそうな変数の未定義や構文ミス）」をするのに対して、Prettier は「見た目の統一（シングルクォートにするか、セミコロンをつけるか、インデントの調整など）」を保存時に自動で綺麗にしてくれるツールです。
+ターミナルでフロントエンド（またはプロジェクトのルート）ディレクトリで以下インストール
+npm install --save-dev prettier
+
+プロジェクトのルートディレクトリに .prettierrc という名前のファイルを作成し、プロジェクトのフォーマットルールを記述します。
+    {
+      "semi": false,
+      "singleQuote": true,
+      "tabWidth": 2,
+      "trailingComma": "es5"
+    }
+
+コマンド実行例
+npx prettier --write .
+
+エディタ（VS Code）で保存時に自動実行させる設定
+エディタ側でファイル保存時（Cmd + S / Ctrl + S）に自動で整形されるように設定します。
+拡張機能をインストール:
+VS Code の拡張機能タブで Prettier - Code formatter を検索してインストールします。
+VS Code の設定を更新:
+.vscode/settings.json（プロジェクト内、なければ作成）に以下を追加するか、VS Code の設定画面から有効化します。
+
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true
+}
+
+
+Part8
+アポロサーバー
+今日の主要ライブラリであるApollo Serverを使ってGraphQLサーバーを実装してみましょう。 （新しいタブで開きます）。
+新しい npm プロジェクトを作成し npm init 、必要な依存関係をインストールします。
+npm install @apollo/server graphql
+
+index.js プロジェクトのルートディレクトリにもファイルを作成してください 。
+----------
+const { ApolloServer } = require('@apollo/server')
+const { startStandaloneServer } = require('@apollo/server/standalone')
+
+let persons = [
+  {
+    name: "Arto Hellas",
+    phone: "040-123543",
+    street: "Tapiolankatu 5 A",
+    city: "Espoo",
+    id: "3d594650-3436-11e9-bc57-8b80ba54c431"
+  },
+  {
+    name: "Matti Luukkainen",
+    phone: "040-432342",
+    street: "Malminkaari 10 A",
+    city: "Helsinki",
+    id: '3d599470-3436-11e9-bc57-8b80ba54c431'
+  },
+  {
+    name: "Venla Ruuska",
+    street: "Nallemäentie 22 C",
+    city: "Helsinki",
+    id: '3d599471-3436-11e9-bc57-8b80ba54c431'
+  },
+]
+
+const typeDefs = `
+  type Person {
+    name: String!
+    phone: String
+    street: String!
+    city: String! 
+    id: ID!
+  }
+
+  type Query {
+    personCount: Int!
+    allPersons: [Person!]!
+    findPerson(name: String!): Person
+  }
+`
+
+const resolvers = {
+  Query: {
+    personCount: () => persons.length,
+    allPersons: () => persons,
+    findPerson: (root, args) =>
+      persons.find(p => p.name === args.name)
+  }
+}
+
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+})
+
+startStandaloneServer(server, {
+  listen: { port: 4000 },
+}).then(({ url }) => {
+  console.log(`Server ready at ${url}`)
+})
+----------
+
+ アプリケーションを実行するために、以下のスクリプトを package.jsonに追加しましょう。
+ ----------
+ {
+  //...
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    // ...
+  }
+}
+ ----------
+
+-----
+「GraphQLの強力なクエリやデータ構造を、バグを出さずに効率よくフロントエンドで扱うための『至れり尽くせりの専用お助けセット』」がApolloです。これがあるおかげで、通信の細かいお世話を気にせず、UIの構築やビジネスロジックに集中できるようになります！
+
+ REST APIの特徴：
+リソースごとにURLが分かれている（例: ノート一覧は /api/notes、ユーザーは /api/users）。
+HTTPメソッド（GET, POST, PUT, DELETE）をそのまま使ってシンプルにデータの取得や保存を行う。
+
+Axiosやfetchが合う理由：
+「このURLにデータをPOSTする」「このURLからGETで取ってくる」という構造がシンプルなため、Axiosや fetch のような直接的なHTTPクライアントを使うのが一番ストレートで分かりやすいからです。
+-----
+
+新しいReactアプリを作成し、  Apolloクライアントに必要な依存関係をインストールしましょう。（新しいタブで開きます）。
+
+npm install @apollo/client graphql
+
+main.jsxファイルのデフォルトの内容を
+--
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import App from './App.jsx'
+
+import { ApolloClient, gql, HttpLink, InMemoryCache } from '@apollo/client'
+
+const client = new ApolloClient({
+  link: new HttpLink({
+    uri: 'http://localhost:4000',
+  }),
+  cache: new InMemoryCache(),
+})
+
+const query = gql`
+  query {
+    allPersons {
+      name
+      phone
+      address {
+        street
+        city
+      }
+      id
+    }
+  }
+`
+
+client.query({ query }).then((response) => {
+  console.log(response.data)
+})
+
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+--
+
+ExpressとApollo Server統合パッケージをインストールしましょう。
+npm install express cors @as-integrations/express5
+server.js ファイルを以下の形式に変更してください 。
+---------------
+const { ApolloServer } = require('@apollo/server')
+const {
+  ApolloServerPluginDrainHttpServer,
+} = require('@apollo/server/plugin/drainHttpServer')
+const { expressMiddleware } = require('@as-integrations/express5')
+const cors = require('cors')
+const express = require('express')
+const { makeExecutableSchema } = require('@graphql-tools/schema')
+const http = require('http')
+const jwt = require('jsonwebtoken')
+
+const resolvers = require('./resolvers')
+const typeDefs = require('./schema')
+const User = require('./models/user')
+
+const getUserFromAuthHeader = async (auth) => {
+  if (!auth || !auth.startsWith('Bearer ')) {
+    return null
+  }
+
+  const decodedToken = jwt.verify(auth.substring(7), process.env.JWT_SECRET)
+  return User.findById(decodedToken.id).populate('friends')
+}
+
+const startServer = async (port) => {
+  const app = express()
+  const httpServer = http.createServer(app)
+ 
+  const server = new ApolloServer({
+    schema: makeExecutableSchema({ typeDefs, resolvers }),
+    plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
+  })
+ 
+  await server.start()
+ 
+  app.use(
+    '/',
+    cors(),
+    express.json(),
+    expressMiddleware(server, {
+      context: async ({ req }) => {
+        const auth = req.headers.authorization
+        const currentUser = await getUserFromAuthHeader(auth)
+        return { currentUser }
+      },
+    }),
+  )
+ 
+  httpServer.listen(port, () =>
+    console.log(`Server is now running on http://localhost:${port}`),
+  )
+}
+
+module.exports = startServer
+---------------
+バックエンドのサブスクリプション
+GraphQLへのサブスクリプションを追加するためのパッケージと、Node.jsのWebSocketライブラリをインストールする必要があります。
+npm install graphql-ws ws @graphql-tools/schema
+
+server.jsというファイル  が以下のように変更されました。
+
+---------
+const { WebSocketServer } = require('ws')
+const { useServer } = require('graphql-ws/use/ws')
+
+// ...
+
+const startServer = async (port) => {
+  const app = express()
+  const httpServer = http.createServer(app)
+
+  const wsServer = new WebSocketServer({
+    server: httpServer,
+    path: '/',
+  })
+ 
+  const schema = makeExecutableSchema({ typeDefs, resolvers })
+  const serverCleanup = useServer({ schema }, wsServer)
+
+  const server = new ApolloServer({
+    schema, 
+    plugins: [
+      ApolloServerPluginDrainHttpServer({ httpServer }),
+      {
+        async serverWillStart() {
+          return {
+            async drainServer() {
+              await serverCleanup.dispose();
+            },
+          }
+        },
+      },
+    ],
+  })
+
+  await server.start()
+
+  // ...
+}
+---------
+
+まず、パブリッシュ/サブスクライブ機能を提供するライブラリをインストールしましょう
+npm install graphql-subscriptions
+
+resolvers.jsファイルへの変更点  は以下のとおりです。
+-------------
+const { GraphQLError } = require('graphql')
+const { PubSub } = require('graphql-subscriptions')
+const jwt = require('jsonwebtoken')
+
+const Person = require('./models/person')
+const User = require('./models/user')
+
+const pubsub = new PubSub()
+
+const resolvers = {
+  // ...
+  Mutation: {
+    addPerson: async (root, args, context) => {
+        const currentUser = context.currentUser
+
+        if (!currentUser) {
+          throw new GraphQLError('not authenticated', {
+            extensions: {
+              code: 'UNAUTHENTICATED',
+            },
+          })
+        }
+
+        const nameExists = await Person.exists({ name: args.name })
+
+        if (nameExists) {
+          throw new GraphQLError(`Name must be unique: ${args.name}`, {
+            extensions: {
+              code: 'BAD_USER_INPUT',
+              invalidArgs: args.name,
+            },
+          })
+        }
+
+      const person = new Person({ ...args })
+
+      try {
+        await person.save()
+        currentUser.friends = currentUser.friends.concat(person)
+        await currentUser.save()
+      } catch (error) {
+        throw new GraphQLError(`Saving person failed: ${error.message}`, {
+          extensions: {
+            code: 'BAD_USER_INPUT',
+            invalidArgs: args.name,
+            error,
+          },
+        })
+      }
+
+
+      pubsub.publish('PERSON_ADDED', { personAdded: person })
+
+      return person
+    },
+    // ...
+  },
+  Subscription: {
+    personAdded: {
+      subscribe: () => pubsub.asyncIterableIterator('PERSON_ADDED')
+    },
+  },
+}
+-------------
+
+クライアントのサブスクリプション
+
+graphql-wsライブラリをフロントエンドの依存関係として追加しましょう  。これにより、   GraphQLサブスクリプションのためのWebSocket接続が可能
+npm install graphql-ws
+
+main.jsxの設定を  以下のように変更する必要があります。
+--------------------------
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import App from './App.jsx'
+
+import {
+  ApolloClient,
+  ApolloLink,
+  HttpLink,
+  InMemoryCache,
+} from '@apollo/client'
+import { ApolloProvider } from '@apollo/client/react'
+import { SetContextLink } from '@apollo/client/link/context'
+import { GraphQLWsLink } from '@apollo/client/link/subscriptions'
+import { getMainDefinition } from '@apollo/client/utilities'
+import { createClient } from 'graphql-ws'
+
+const authLink = new SetContextLink(({ headers }) => {
+  const token = localStorage.getItem('phonebook-user-token')
+  return {
+    headers: {
+      ...headers,
+      authorization: token ? `Bearer ${token}` : null,
+    },
+  }
+})
+
+const httpLink = new HttpLink({ uri: 'http://localhost:4000' })
+
+const wsLink = new GraphQLWsLink(
+  createClient({
+    url: 'ws://localhost:4000',
+  }),
+)
+
+const splitLink = ApolloLink.split(
+  ({ query }) => {
+    const definition = getMainDefinition(query)
+    return (
+      definition.kind === 'OperationDefinition' &&
+      definition.operation === 'subscription'
+    )
+  },
+  wsLink,
+  authLink.concat(httpLink),
+)
+
+const client = new ApolloClient({
+  cache: new InMemoryCache(),
+  link: splitLink,
+})
+
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <ApolloProvider client={client}>
+      <App />
+    </ApolloProvider>
+  </StrictMode>,
+)
+--------------------------
+
+queriesにサブスクリプションを足す
+
+
+TypeScript
+npm init空のディレクトリでコマンドを実行することで設定されます。その後、以下のコマンドを実行することで依存関係をインストールできます。
+npm install --save-dev typescript
+
+package.jsonファイル内にスクリプトも設定しましょう。
+--------------
+{
+  // ...
+  "type": "module",
+  "scripts": {
+   "tsc": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
+--------------
+
