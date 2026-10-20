@@ -921,3 +921,171 @@ package.jsonファイル内にスクリプトも設定しましょう。
 }
 --------------
 
+npm run tsc file.ts
+--noEmit オプションは、TypeScript コンパイラに JavaScript 出力を生成しないように指示します。コンパイル済みファイルは生成されず、型チェックのみが実行されます。
+
+ プロジェクトに以下の内容の構成ファイル tsconfig.jsonを追加しましょう。
+------------
+{
+  "compilerOptions":{
+    "noImplicitAny": false,
+    "noEmit": true
+  }
+}
+------------
+tsconfig.jsonファイルは、TypeScript コンパイラがコードをどのように解釈するか、コンパイラの動作の厳密さ、監視または無視するファイルなどを定義するために使用されます。今のところは、コンパイラオプションnoImplicitAnyを無効にするだけにします。（新しいタブで開きます）そのため、使用するすべての変数に型を付ける必要はありません。また、TypeScriptコンパイラはチェックのみに使用するため、「noEmit」をtrueに設定しました。
+   "tsc": "tsc"
+
+パッケージ@types/nodeがインストールされている場合、コンパイラは変数 process についてエラーを出力しません。コード内で型を require する必要はなく、パッケージをインストールするだけで十分です。
+npm install --save-dev @types/node
+以下をtsconfig.jsonに足す
+"types": ["node"]
+
+
+Expressも加えて
+その前に、 tsconfig.jsonファイルの設定を少し拡張してみましょう。今のところ、このファイルにはnoImplicitAny というtsconfig ルールが 1 つしかありません。（新しいタブで開きます）ファイルの内容を変更して、以下の内容にしてください。
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "noEmit": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "module": "nodenext",
+    "esModuleInterop": true,
+    "allowImportingTsExtensions": true
+  }
+}
+
+npm install express
+
+そして、   package.jsonにスタートスクリプトを追加します。
+
+{
+  // ...
+  "scripts": {
+    "tsc": "tsc",
+    "multiply": "tsc  && node multiplier.ts",
+    "start": "tsc && node index.ts"
+  },
+  // ..
+}
+
+これで、 index.tsファイルを作成し 、HTTP GET  ping エンドポイントをそこに書き込むことができます。
+const express = require('express');
+const app = express();
+
+app.get('/ping', (req, res) => {
+  res.send('pong');
+});
+
+const PORT = 3003;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+エラーの原因は、Expressの型がインストールされていないことです。提案に従って、以下を実行してください。
+npm install --save-dev @types/express
+
+これは、 tsconfig.jsonで未使用のパラメータを禁止したためです 。
+
+しかし、これは完全にはうまくいきません。型チェックは最初にしか行われないからです。解決策の一つは、型チェックとNodeをウォッチモードで同時に実行することです。これはnpmパッケージのconcurrentlyを使えば簡単にできます。それでは、インストールしてみましょう。
+
+npm install --save-dev concurrently
+package.jsonにスクリプトを追加します 。
+
+
+  "scripts": {
+    "tsc": "tsc",
+    "multiply": "tsc && node multiplier.ts",
+    "calculate": "tsc && node calculator.ts",
+    "start": "node index.ts",
+    "dev": "concurrently \"tsc --watch\" \"node --watch index.ts\""
+  },
+
+ESlint
+開発者が任意の型を使用できないように制限したい場合はどうすればよいでしょうか ？幸いなことに、コーディングスタイルを強制するにはtsconfig.json 以外の方法もあります 。ESlintを 使用してコードを管理することができます  。ESlintとそのTypeScript拡張機能をインストールしましょう。
+新しいバージョンがリリースされるまでは、コマンドを次の形式で実行する必要があります。 npm install --legacy-peer-deps
+npm install --save-dev eslint @eslint/js typescript-eslint
+npm install --legacy-peer-deps eslint @eslint/js typescript-eslint
+ESlint を設定して 明示的な any を禁止します（新しいタブで開きます）eslint.config.mjsに以下のルールを記述してください 。
+------
+import eslint from '@eslint/js';
+import tseslint from 'typescript-eslint';
+
+export default tseslint.config({
+  files: ['**/*.ts'],
+  extends: [
+    eslint.configs.recommended,
+    ...tseslint.configs.recommendedTypeChecked,
+  ],
+  languageOptions: {
+    parserOptions: {
+      project: true,
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
+  rules: {
+    '@typescript-eslint/no-explicit-any': 'error',
+  },
+});
+------
+
+package.jsonファイル を変更してファイルを検査する lint npm スクリプトも設定しましょう  。
+---
+{
+  // ...
+  "scripts": {
+      "tsc": "tsc",
+      "calculate": "tsc && node calculator.ts",
+      "multiply": "tsc && node multiplier.ts",
+      "start": "node index.ts",
+      "dev": "concurrently \"tsc --watch\" \"node --watch index.ts\"",
+      "lint": "eslint ."
+      //  ...
+  },
+  // ...
+}
+---
+
+推奨設定に加えて、この部分で求められるコーディングスタイルに慣れ、 各コード行の末尾にセミコロンを必須とするように設定する必要があります。そのためには、 @stylistic/eslint-pluginをインストールして設定する必要があります。 （新しいタブで開きます）:
+npm install --save-dev @stylistic/eslint-plugin
+npm install --legacy-peer-deps @stylistic/eslint-plugin
+最終的な eslint.config.mjs は以下のようになります。
+----
+import eslint from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import stylistic from "@stylistic/eslint-plugin";
+
+export default tseslint.config({
+  files: ['**/*.ts'],
+  extends: [
+    eslint.configs.recommended,
+    ...tseslint.configs.recommendedTypeChecked,
+  ],
+  languageOptions: {
+    parserOptions: {
+      project: true,
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
+  plugins: {
+    "@stylistic": stylistic,
+  },
+  rules: {
+    '@stylistic/semi': 'error',
+    '@typescript-eslint/no-unsafe-assignment': 'error',
+    '@typescript-eslint/no-explicit-any': 'error',
+    '@typescript-eslint/explicit-function-return-type': 'off',
+    '@typescript-eslint/explicit-module-boundary-types': 'off',
+    '@typescript-eslint/restrict-template-expressions': 'off',
+    '@typescript-eslint/restrict-plus-operands': 'off',
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      { 'argsIgnorePattern': '^_' }
+    ],
+  },
+});
+----
