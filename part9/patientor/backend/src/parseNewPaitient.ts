@@ -1,5 +1,5 @@
-import type{NewPatient} from "./types.ts"
-import { Gender } from "./types.ts"
+import type{NewPatient} from "./types.ts";
+import { Gender } from "./types.ts";
 import { z } from 'zod';
 
 
@@ -78,11 +78,11 @@ const parseNewPatientSchema = z.object({
   ssn: z.string(),
   gender:z.enum(Gender),
   occupation:z.string()
-})
+});
  
 export const parseNewPatient = (object:unknown): NewPatient =>{
-  return parseNewPatientSchema.parse(object)
-}
+  return parseNewPatientSchema.parse(object);
+};
 
 
 // export default parseNewPatient;

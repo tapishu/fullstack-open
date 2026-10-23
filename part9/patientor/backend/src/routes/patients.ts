@@ -1,12 +1,12 @@
 import patientorService from "../services/patientorService.ts";
 import express from "express";
-import {parseNewPatient} from "../parseNewPaitient.ts"
+import {parseNewPatient} from "../parseNewPaitient.ts";
 
 const router = express.Router();
 
 router.get("/",(_req,res)=>{
-    res.send(patientorService.getNonSensitivePatient())
-})
+    res.send(patientorService.getNonSensitivePatient());
+});
 
 router.post("/",(req,res)=>{
 
@@ -32,7 +32,7 @@ let errorMessage = 'Something went wrong.';
     //     occupation
     // });
     // res.json(addedPatient)
-})
+});
 
 export default router;
 

@@ -10,7 +10,7 @@ export const Gender ={
     Other : "other",
 } as const;
 
-export type Gender = typeof Gender[keyof typeof Gender]
+export type Gender = typeof Gender[keyof typeof Gender];
 
 
 export interface Patient{
