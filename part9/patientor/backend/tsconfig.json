@@ -1,0 +1,15 @@
+{
+  // Visit https://aka.ms/tsconfig to read more about this file
+  "compilerOptions": {
+    "target": "esnext",
+    "noEmit": true,
+    "module": "nodenext",
+    "esModuleInterop": true,
+    "allowImportingTsExtensions": true,
+    "strict" : true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
+  }
+}
