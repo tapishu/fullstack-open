@@ -1,6 +1,6 @@
 import express from 'express';
 import { calculateBmi } from './bmiCalculator.ts';
-import {calculateExercises} from "./exerciseCalculator.ts"
+import {calculateExercises} from "./exerciseCalculator.ts";
 const app = express();
 
 app.use(express.json());
