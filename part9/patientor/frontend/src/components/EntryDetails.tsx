@@ -1,13 +1,11 @@
-import patientService from "../services/patients";
-import { useEffect,useState } from "react";
-import { Patient,Diagnosis,Entry,HealthCheckEntry,OccupationalHealthcareEntry, HospitalEntry} from "../types";
-import diagnosesService from "../services/diagnoses";
+// import { useEffect,useState } from "react";
+import {Entry,HealthCheckEntry,OccupationalHealthcareEntry, HospitalEntry} from "../types";
+// import diagnosesService from "../services/diagnoses";
 import { Paper } from '@mui/material';
 import WorkIcon from '@mui/icons-material/Work';
 import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import FavoriteIcon from '@mui/icons-material/Favorite';
-import { yellow } from "@mui/material/colors";
 
 
 const getHeartColor=(rating:number) =>{
@@ -64,20 +62,20 @@ const HospitalDetails = ({entry}:{entry:HospitalEntry}) =>(
 
 
 const EntryDetails= ({entry}:{entry:Entry}) => {
-const [diagnoses,setDiagnoses] =useState<Diagnosis[]>([]);
+// const [diagnoses,setDiagnoses] =useState<Diagnosis[]>([]);
 
 
-  useEffect(() => {
-    const fetchDiagnoses = async () => {
-      try{
-      const data:Diagnosis[] = await diagnosesService.getDiagnoses();
-      setDiagnoses(data);
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    void fetchDiagnoses();
-  }, []);
+//   useEffect(() => {
+//     const fetchDiagnoses = async () => {
+//       try{
+//       const data:Diagnosis[] = await diagnosesService.getDiagnoses();
+//       setDiagnoses(data);
+//       } catch (e) {
+//         console.error(e);
+//       }
+//     };
+//     void fetchDiagnoses();
+//   }, []);
 
 const assertNever = (value: never): never => {
   throw new Error(

@@ -1,7 +1,7 @@
 import { useState, SyntheticEvent } from "react";
 
 import {  TextField, InputLabel, MenuItem, Select, Grid, Button, SelectChangeEvent } from '@mui/material';
-import AddPatientModal from './AddPatientModal';
+// import AddPatientModal from './AddPatientModal';
 import { PatientFormValues, Gender } from "../../types";
 
 interface Props {

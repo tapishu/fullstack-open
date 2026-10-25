@@ -1,19 +1,19 @@
 import patientService from "../services/patients";
 import { useEffect,useState } from "react";
-import { Patient,Diagnosis,Entry } from "../types";
+import { Patient,Entry } from "../types";
 import { useParams } from "react-router-dom"; 
 import MaleIcon from '@mui/icons-material/Male';
 import FemaleIcon from '@mui/icons-material/Female';
 import TransgenderIcon from '@mui/icons-material/Transgender';
-import diagnosesService from "../services/diagnoses";
+// import diagnosesService from "../services/diagnoses";
 import EntryDetails from "./EntryDetails";
 import EntryForm from "./EntryForm";
 
 const PatientDetail= () => {
 const [patient,setPatient] =useState<Patient | null>(null);
 const { id } = useParams<{ id: string }>();
-const [diagnoses,setDiagnoses] =useState<Diagnosis[]>([]);
-const [showAddEntry,setShowAddEntry] = useState<boolean>(false)
+// const [diagnoses,setDiagnoses] =useState<Diagnosis[]>([]);
+const [showAddEntry,setShowAddEntry] = useState<boolean>(false);
 const renderGenderIcon = (gender: Patient['gender']) => {
   switch (gender) {
     case 'male':
@@ -25,17 +25,17 @@ const renderGenderIcon = (gender: Patient['gender']) => {
   }
 };
 
-  useEffect(() => {
-    const fetchDiagnoses = async () => {
-      try{
-      const data:Diagnosis[] = await diagnosesService.getDiagnoses();
-      setDiagnoses(data);
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    void fetchDiagnoses();
-  }, []);
+  // useEffect(() => {
+  //   const fetchDiagnoses = async () => {
+  //     try{
+  //     const data:Diagnosis[] = await diagnosesService.getDiagnoses();
+  //     setDiagnoses(data);
+  //     } catch (e) {
+  //       console.error(e);
+  //     }
+  //   };
+  //   void fetchDiagnoses();
+  // }, []);
 
   useEffect(() => {
     const fetchPatientList = async () => {
