@@ -149,7 +149,7 @@ break;
 }
 
   try {
-    const addedEntry = await patientService.addEntry(id,newEntry);
+    const addedEntry = await patientService.addEntry(id,newEntry) as Entry;
     console.log("Added entry:", addedEntry);
 onAdd(addedEntry);
     
