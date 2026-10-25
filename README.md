@@ -1089,3 +1089,128 @@ export default tseslint.config({
   },
 });
 ----
+
+Expressアプリで入力
+ npm init を実行して 、  typescript パッケージを開発依存関係としてインストールします。
+  npm install typescript --save-dev
+package.jsonにも必要な変更を加えましょう。
+---
+{
+  // ..
+  "type": "module",
+  "scripts": {
+    "tsc": "tsc"  
+  },
+  // ..
+}
+---
+これで、以下のコマンドを実行してtsconfig.jsonの設定を初期化できます。
+ npm run tsc -- --init
+
+tsconfig.jsonファイルの設定
+------------
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "noEmit": true,
+    "module": "nodenext",
+    "esModuleInterop": true,
+    "allowImportingTsExtensions": true,
+    "strict" : true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
+  }
+}
+------------
+設定が完了したので、次は express と、もちろん @types/expressをインストールします。また、これは将来的に拡張していくことを想定した実際のプロジェクトなので、最初からESlintを使用します。
+npm install express
+npm install --save-dev eslint @eslint/js typescript-eslint @stylistic/eslint-plugin @types/express
+
+ また、以下の内容のeslint.config.mjsファイルを作成します 。
+---------------
+import eslint from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import stylistic from '@stylistic/eslint-plugin';
+
+export default tseslint.config({
+  files: ['**/*.ts'],
+  extends: [
+    eslint.configs.recommended,
+    ...tseslint.configs.recommendedTypeChecked,
+  ],
+  languageOptions: {
+    parserOptions: {
+      projectService: true,
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
+  plugins: {
+    '@stylistic': stylistic,
+  },
+  rules: {
+    '@stylistic/semi': 'error',
+    '@typescript-eslint/no-unsafe-assignment': 'error',
+    '@typescript-eslint/no-explicit-any': 'error',
+    '@typescript-eslint/explicit-function-return-type': 'off',
+    '@typescript-eslint/explicit-module-boundary-types': 'off',
+    '@typescript-eslint/restrict-template-expressions': 'off',
+    '@typescript-eslint/restrict-plus-operands': 'off',
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      { argsIgnorePattern: '^_' },
+    ],
+  },
+});
+---------------
+
+tscとnode --watchを同時に実行します。まず、以下を同時にインストールしましょう
+npm install --save-dev concurrently
+
+package.jsonの追加
+----------
+{
+  // ...
+  "scripts": {
+    "tsc": "tsc",
+    "dev": "concurrently \"tsc --watch\" \"node --watch index.ts\"",
+    "start": "node index.ts",
+    "lint": "eslint ."
+  },
+  // ...
+}
+----------
+TypeScriptをNode.jsで実行する際、enumが消えることがある。それを阻止するためにも--experimental -transform-typesフラグが必要
+だがこれを入れたら実行不可能になった
+------------
+    "dev": "concurrently \"tsc --watch\" \"node --watch --experimental-transform-types index.ts\"",
+    "start": "node --experimental-transform-types index.ts",
+------------
+
+スキーマ検証ライブラリの使用
+リクエストボディにバリデーターを記述するのは大変な作業です。幸いなことに、  役立つ スキーマバリデーターライブラリがいくつか存在します。ここでは、 Zodを見ていきましょう。（新しいタブで開きます） これはTypeScriptと非常に相性が良いです。
+
+npm install zod
+
+
+TypeScript を使用した Vite
+Viteを利用できます （新しいタブで開きます） TypeScriptアプリを作成するには、  初期化スクリプトでテンプレート「react-ts」を指定します。TypeScriptアプリを作成するには、次のコマンドを実行します。
+npm create vite@latest my-app-name -- --template react-ts
+
+
+Part10
+アプリケーションの開発にはExpoを使用します。（新しいタブで開きます）Expoは、React Nativeアプリケーションのセットアップ、開発、構築、デプロイを容易にするプラットフォームです。
+create-expo-appを使ってプロジェクトを初期化し、Expoを使い始めましょう。
+
+npx create-expo-app rate-repository-app --template blank@sdk-55
+
+次に、ターミナルを使って作成したrate-repository-appディレクトリに移動し  、後ほど必要となるいくつかの依存関係をインストールしましょう。
+npx expo install react-native-web react-dom @expo/metro-runtime
+
+シミュレーターの設定方法
+https://docs.expo.dev/workflow/android-studio-emulator/#set-up-android-studio
+https://docs.expo.dev/workflow/ios-simulator/
+
+
+
