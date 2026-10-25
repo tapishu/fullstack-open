@@ -77,9 +77,11 @@ const parseNewPatientSchema = z.object({
   dateOfBirth:z.iso.date(),
   ssn: z.string(),
   gender:z.enum(Gender),
-  occupation:z.string()
+  occupation:z.string(),
+entries: z.array(z.any()).default([])
 });
- 
+
+
 export const parseNewPatient = (object:unknown): NewPatient =>{
   return parseNewPatientSchema.parse(object);
 };
