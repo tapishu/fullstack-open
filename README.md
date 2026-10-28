@@ -1214,3 +1214,75 @@ https://docs.expo.dev/workflow/ios-simulator/
 
 
 
+===============
+ここ抜けてる
+===============
+React Native アプリケーションでは、同じ @apollo/clientを使用します。（新しいタブで開きます）パート8で説明したライブラリを使用します。まずはgraphql と一緒にライブラリをインストールすることから始めましょう。 （新しいタブで開きます） ピア依存関係として必要なライブラリ：
+
+npm install @apollo/client graphql
+
+ユーザーのデバイスにデータを保存する
+ユーザーのデバイスに永続的なデータを保存する必要がある場合があります。よくあるシナリオの1つは、ユーザーの認証トークンを保存して、ユーザーがアプリケーションを閉じて再度開いた場合でも取得できるようにすることです。Web開発では、 localStorage このような機能を実現するためにブラウザのオブジェクトを使用してきました。React Nativeは、同様の永続ストレージである AsyncStorageを提供しています。（新しいタブで開きます）。
+ 以下のコマンドを使用して、 Expo SDK のバージョンに適したnpx expo install バージョンの @react-native-async-storage/async-storageパッケージをインストールできます 。
+
+npx expo install @react-native-async-storage/async-storage
+
+Part5
+React Nativeアプリケーションのテスト
+あらゆる種類のコードのテストを開始するには、まずテストフレームワークが必要です。これを使用して一連のテストケースを実行し、その結果を検査できます。JavaScript アプリケーションのテストには、  Jest が適しています。（新しいタブで開きます）は、このようなテストフレームワークの有力な候補です。Expo ベースの React Native アプリケーションを Jest でテストするために、Expo はjest-expo という形式で一連の Jest 設定を提供します。 （新しいタブで開きます） プリセット。まずはパッケージのインストールから始めましょう。
+
+npx expo install jest-expo jest @types/jest --dev
+
+Jestでjest-expoプリセットを使用するには、次の Jest設定を追加する必要があります。（新しいタブで開きます）package.jsonファイル に テスト スクリプト と一緒に追加して ください。
+---
+{
+  // ...
+  "scripts": {
+    // other scripts...
+    "test": "jest"
+  },
+  "jest": {
+    "preset": "jest-expo",
+    "transformIgnorePatterns": [
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg|react-router-native)"
+    ]
+  }
+  // ...
+}
+---
+また、VS Codeがキーワードに対して適切なマッチャーを提案できるように、少し設定を行う必要があります 。これは 、プロジェクトのルートにjsconfig.jsonexpectファイル を作成し、以下の内容を記述することで行えます 。
+{
+  "compilerOptions": {
+    "checkJs": false,
+    "types": ["jest"]
+  }
+}
+
+JestのテストファイルでESLintを使用するには、  eslint-plugin-jestも必要です。（新しいタブで開きます） ESLint用のプラグインです。インストールしてみましょう。
+npm install eslint-plugin-jest --save-dev
+
+eslint-plugin-jestプラグインを使用するには、  eslint.config.js ファイルでプラグインを有効にする必要があります。
+---
+// https://docs.expo.dev/guides/using-eslint/
+const { defineConfig } = require('eslint/config');
+const expoConfig = require('eslint-config-expo/flat');
+const pluginJest = require('eslint-plugin-jest');
+
+module.exports = defineConfig([
+  expoConfig,
+  {
+    ignores: ['dist/*'],
+  },
+  {
+    files: ['**/*.test.js', '**/*.spec.js'],
+    ...pluginJest.configs['flat/recommended'],
+  },
+]);
+
+---
+
+
+第 5部（新しいタブで開きます）私たちはこれらのライブラリの1つであるReact Testing Library に慣れ親しんだ。 （新しいタブで開きます）残念ながら、このライブラリはReact Webアプリケーションのテストにのみ適しています。幸いなことに、このライブラリにはReact Native版があり、それが React Native Testing Libraryです。（新しいタブで開きます）これは、React Nativeアプリケーションのコンポーネントをテストする際に使用するライブラリです。幸いなことに、これらのライブラリは非常に似たAPIを共有しているため、新しい概念を学ぶ必要はほとんどありません。それでは、  @testing-library/react-native ライブラリをプロジェクトにインストールしましょう。
+
+npx expo install @testing-library/react-native --dev
+
