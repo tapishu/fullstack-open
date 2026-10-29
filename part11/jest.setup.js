@@ -1,4 +1,5 @@
-const { TextEncoder, TextDecoder } = require('util')
+/* global require, global*/
+const { TextEncoder, TextDecoder } = require("util");
 
-global.TextEncoder = TextEncoder
-global.TextDecoder = TextDecoder
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
