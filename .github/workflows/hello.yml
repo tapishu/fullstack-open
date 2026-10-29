@@ -11,3 +11,9 @@ jobs:
     steps:
       - name: Say hello World
         run: echo "Hello World!"
+
+      - name: Date
+        run: date
+
+      - name: List files
+        run: ls -la
