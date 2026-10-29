@@ -19,3 +19,6 @@ jobs:
       - name: Check style
         run: npm run eslint
         working-directory: part11
+      - name: Check test
+        run: npm run test
+        working-directory: part11
