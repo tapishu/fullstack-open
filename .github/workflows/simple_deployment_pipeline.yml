@@ -26,4 +26,5 @@ jobs:
         run: npm run test
         working-directory: part11/fs-pokedex
       - name: Trigger deployment
+        if: ${{ github.event_name == 'push' }}
         run: curl ${{ secrets.RENDER_DEPLOY_HOOK }}
