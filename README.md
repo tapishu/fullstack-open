@@ -1301,3 +1301,36 @@ Gitのルートプロジェクト上のSEttingsよりsecrets and variables→Act
 -----
 
 
+プルリクエストで保存し、テストを実行するがオートデプロイ設定時はこの時にif: ${{ github.event_name == 'push' }}がないとデプロイされてしまう。
+1. プルリクエスト（Pull Request / PR）ってなに？
+一言でいうと、「私の書いたコードを、本番用のコード（main ブランチ）に合体（マージ）させてください！」というお願文書（またはそのやり取りのページ）のことです。いきなり本番の部屋（main）に自分の新しいおもちゃ（コード）を放り込むと、部屋が散らかったり壊れたりするかもしれませんよね。
+だから、「一度廊下（プルリクエスト）に置くので、みんなでテストや中身を確認してから本番に入れてもいいですか？」という安全確認のステップを挟むために使います。
+
+2. 「これって何やってるの？」全体の仕組み
+いまやっているのは、「安全な自動検査の仕組み（CI/CD）」を作る課題です。
+プルリクエストを出したとき（お医者さんの健康診断）：
+コードに間違いがないか、テストや文法チェック（ESLintなど）が自動で走ります。この段階ではまだ本番環境（Render）には反映されません（＝デプロイされない）。
+main にマージされたとき（本番への正式採用）：
+「テストも無事にクリアしたし、本番の部屋に入れてOK！」となったので、自動的に本番サーバー（Render）にコードが反映（＝デプロイ）されます。
+
+
+バージョン管理
+手順1：GitHubの権限設定を確認する（最初におすすめ）
+トークンが自動でタグ（バージョン）を書き込めるように、権限を許可しておきます。
+GitHubのリポジトリページの上部メニューにある 「Settings（設定）」 をクリック。
+左メニューの 「Actions」 ＞ 「General」 をクリック。
+一番下までスクロールし、「Workflow permissions」 の項目を探す。
+「Read and write permissions」（読み取りおよび書き込み権限）にチェックを入れて Save を押す。
+
+手順2: yamlにtagreleaseを追加
+tag_release:
+    needs: [simple_deployment_pipeline]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bump version and push tag
+        if: ${{ github.event_name == 'push' }}
+        uses: anothrNick/github-tag-action@1.71.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BUMP: patch
