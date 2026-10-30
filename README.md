@@ -1286,3 +1286,18 @@ module.exports = defineConfig([
 
 npx expo install @testing-library/react-native --dev
 
+Part11
+ルートプロジェクトは以下にシェルファイルを作成し、起動コマンドを記載
+chmod +x　で実行権利を付与し、実行できることを確認することでRenderの起動時のコマンドは記載せず、代わりにシェルを実行するように設定
+npm install && npm run buildとか
+
+Renderを用いて自動デプロイする方法
+Renderでデプロイできることを確認後、setting上のDeploy HookのURLを控える。
+Gitのルートプロジェクト上のSEttingsよりsecrets and variables→Actions と進みRepository secretにて変数名と該当URLを保存
+.githubのアクションで実行できるようにテストの最後にcurlコマンドにて実行できるよう設定
+-----
+- name: Trigger deployment
+        run: curl ${{ secrets.RENDER_DEPLOY_HOOK }}
+-----
+
+
