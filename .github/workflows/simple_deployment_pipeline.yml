@@ -22,3 +22,6 @@ jobs:
       - name: Check test
         run: npm run test
         working-directory: part11
+        
+      - name: Trigger deployment
+        run: curl ${{ secrets.RENDER_DEPLOY_HOOK }}
