@@ -30,7 +30,7 @@ jobs:
         run: curl ${{ secrets.RENDER_DEPLOY_HOOK }}
         
         
-tag_release:
+  tag_release:
     needs: [simple_deployment_pipeline]
     runs-on: ubuntu-latest
     steps:
