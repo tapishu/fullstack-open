@@ -15,13 +15,12 @@ jobs:
           node-version: "20"
       - name: Install dependencies
         run: npm install
-        working-directory: part11
+        working-directory: part11/fs-pokedex
       - name: Check style
         run: npm run eslint
-        working-directory: part11
+        working-directory: part11/fs-pokedex
       - name: Check test
         run: npm run test
-        working-directory: part11
-        
+        working-directory: part11/fs-pokedex
       - name: Trigger deployment
         run: curl ${{ secrets.RENDER_DEPLOY_HOOK }}
