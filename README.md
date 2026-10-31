@@ -1334,3 +1334,73 @@ tag_release:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BUMP: patch
+
+
+
+Part12 Docker
+コマンド集
+Runで実行-iでインタラクティブ
+docker container run hello-world    
+docker run -it ubuntu bash
+リスト
+docker container ls -a  
+起動と停止　-iはインタラクティブ
+docker start blissful_kare    
+docker start -i blissful_kare
+docker kill blissful_kare 
+イメージの保存　イメージ元　その名前
+docker commit blissful_kare hello-node-world  
+イメージの白紙化
+docker container rm hopeful_clarke
+
+Dockerfile
+コンテナ内のファイルをコピーして変更する代わりに、「Hello, World!」アプリケーションを含む新しいイメージを作成できます。このためのツールはDockerfileです。Dockerfileは、イメージを作成するためのすべての手順を含むシンプルなテキストファイルです。「Hello, World!」アプリケーション用のDockerfileの例を作成してみましょう。
+
+以下のファイル構造の作成
+├── index.js
+└── Dockerfile
+
+Dockerfile中身
+--------------------------
+FROM node:24
+
+WORKDIR /usr/src/app
+
+COPY ./index.js ./index.js
+
+CMD ["node", "index.js"]
+
+--------------------------
+
+上記をもとにしたコマンド
+docker build -t fs-hello-world . 
+
+ローカルにある画像の一覧は で表示しdocker image ls
+削除は docker image rm
+
+
+Expressサーバーをコンテナに移動するのは、「Hello, World!」アプリケーションをコンテナ内に移動するのと同じくらい簡単です。唯一の違いは、ファイル数が増えることです。幸いなことに、  COPYコマンドですべて処理できます。index.jsを削除して、新しいExpressサーバーを作成しましょう。express -generatorを 使用します。 （新しいタブで開きます） 基本的なExpressアプリケーションの骨組みを作成する。
+
+npx express-generator
+
+npm install
+以下のplaygroundをpackage.jsonのnameに変更する
+DEBUG=playground:* npm start
+
+Dockerfileに以下を足す
+---------------------
+FROM node:24
+
+WORKDIR /usr/src/app
+
+COPY . .
+
+ENV DEBUG=playground:*
+
+CMD ["npm", "start"]
+---------------------
+
+これで、Dockerfileからイメージをビルドして実行できます。
+
+docker build -t express-server .
+docker run -p 3123:3000 express-server
