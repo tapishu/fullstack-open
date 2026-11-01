@@ -1353,6 +1353,22 @@ docker commit blissful_kare hello-node-world
 イメージの白紙化
 docker container rm hopeful_clarke
 
+ymlでの起動　停止
+docker compose -f docker-compose.dev.yml up
+docker compose -f docker-compose.dev.yml down
+Docker内のVolumeの操作
+リスト表示
+docker volume ls
+内容確認
+docker volume inspect
+削除
+docker volume rm。
+
+Exec関連のコマンド
+docker exec -it wonderful_ramanujan bash
+docker exec -it <コンテナ名またはID> mongosh
+docker exec -it todo-backend-redis-1 redis-cli
+
 Dockerfile
 コンテナ内のファイルをコピーして変更する代わりに、「Hello, World!」アプリケーションを含む新しいイメージを作成できます。このためのツールはDockerfileです。Dockerfileは、イメージを作成するためのすべての手順を含むシンプルなテキストファイルです。「Hello, World!」アプリケーション用のDockerfileの例を作成してみましょう。
 
@@ -1404,3 +1420,183 @@ CMD ["npm", "start"]
 
 docker build -t express-server .
 docker run -p 3123:3000 express-server
+左側の 3123: あなたのMac（ホスト側）のポート番号です。
+右側の 3000: コンテナの中で動いているアプリ（Express）のポート番号です。
+
+
+余計な依存関係をインストールしないように.dockerignoreファイルを使用する
+.dockerignore
+.gitignore
+node_modules
+Dockerfile
+
+Dockerfile は以下のように変更されます。
+-----------
+FROM node:22
+
+WORKDIR /usr/src/app
+
+COPY . .
+
+RUN npm install
+
+ENV DEBUG=express:* 
+
+CMD ["npm", "start"] 
+-----------
+ビルドステップ中に新しいものをインストールしないため、またバージョンが突然変更されることを望まないため、今回はci を使用します。
+-----------------
+WORKDIR /usr/src/app
+
+COPY . .
+
+RUN npm ci
+
+ENV DEBUG=express:*
+
+CMD ["npm", "start"]
+-----------------
+
+残る重要な問題は、アプリケーションが権限の低いユーザーではなく、root権限で実行されていることです。Dockerfileに最後の変更を加え、USER命令を使用してユーザーをroot以外のユーザーに設定しましょう。
+-----------------
+FROM node:22
+  
+WORKDIR /usr/src/app
+
+COPY --chown=node:node . .
+
+RUN npm ci 
+
+ENV DEBUG=playground:*
+  
+USER node
+
+CMD ["npm", "start"]
+-----------------
+
+コマンドをDockerComposeで
+docker-compose.ymlファイルを作成し、Dockerfile と同じプロジェクトのルートディレクトリに配置
+-----
+services:
+  app:                    # The name of the service, can be anything
+    image: express-server # Declares which image to use
+    build: .              # Declares where to build if image is not found
+    ports:                # Declares the ports to publish
+      - 3000:3000
+-----
+
+docker compose up で使用可能
+docker compose up --build で再構築
+
+Mongo DB imageの作成
+todo-app/todo-backend/docker-compose.dev.yml
+の作成
+環境変数のDATABESEはデータベース名
+---
+services:
+  mongo:
+    image: mongo
+    ports:
+      - 3456:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_DATABASE: the_database
+---
+
+以下コマンドでコンテナで起動したmongoに接続しながらローカルでのアプリの起動
+MONGO_URL=mongodb://localhost:3456/the_database npm run dev
+
+
+バインドとマウント
+以下のymlにてローカルのmongo-init.jsとコンテナのmongo-init.jsがリンクする
+-----
+  mongo:
+    image: mongo
+    ports:
+     - 3456:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_DATABASE: the_database
+    volumes:
+    - ./mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+-----
+
+
+コンテナに保存領域を作成することでデータをローカルに保存し、gitで送ってしまうようなリスクが消える。
+-----
+services:
+  mongo:
+    image: mongo
+    ports:
+     - 3456:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_DATABASE: the_database
+    volumes:
+      - ./mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:
+-----
+
+Redisはデフォルトで保存した内容が消えるデータベース。キャッシュに向いていて高速
+------
+services:
+  mongo:
+    image: mongo
+    ports:
+      - 3456:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_DATABASE: the_database
+    volumes:
+    - ./mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+    - mongo_data:/data/db
+
+  redis:
+    image: redis:alpine
+    ports:
+      - 6379:6379
+    volumes:
+      - redis_data:/data
+
+volumes:
+  mongo_data:
+  redis_data:
+------
+
+以下コマンドでコンテナで起動したmongo/redisに接続しながらローカルでのアプリの起動
+REDIS_URL=redis://localhost:6379 MONGO_URL=mongodb://root:example@localhost:3456/the_database?authSource=admin npm run dev
+
+redisのデータベースを永続的に保存する方法は以下のコマンドを足す。マウント元のredis_dataは.gitignoreにしまわないとデータが流出
+------
+services:
+  mongo:
+    image: mongo
+    ports:
+      - 3456:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_DATABASE: the_database
+    volumes:
+    - ./mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+    - mongo_data:/data/db
+
+  redis:
+    image: redis:alpine
+    ports:
+      - 6379:6379
+    command: ['redis-server', '--appendonly', 'yes'] # Overwrite the CMD
+    volumes:
+      - redis_data:/data
+
+volumes:
+  mongo_data:
+  redis_data:
+------
