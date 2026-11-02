@@ -1369,6 +1369,15 @@ docker exec -it wonderful_ramanujan bash
 docker exec -it <コンテナ名またはID> mongosh
 docker exec -it todo-backend-redis-1 redis-cli
 
+====困った時のコマンド====
+指定したComposeファイル（docker-compose.dev.yml）の中に、実際にどんなサービス（コンテナ）が定義されているかをリスト形式で確認するコマンド
+docker compose -f docker-compose.dev.yml config --services
+現在動いている（あるいは過去に残骸として残っていた）コンテナを停止・削除し、Dockerネットワークや古いキャッシュを完全にきれいにするコマンドです。末尾の --remove-orphans は、設定ファイルから消えた不要なコンテナがあれば一緒に片付けてくれるオプションです。
+docker compose -f docker-compose.dev.yml down --remove-orphans
+--build: ソースコードやDockerfileの変更を反映して、イメージを作り直す（ビルドする）
+docker compose -f docker-compose.dev.yml up -d --build
+========================
+
 Dockerfile
 コンテナ内のファイルをコピーして変更する代わりに、「Hello, World!」アプリケーションを含む新しいイメージを作成できます。このためのツールはDockerfileです。Dockerfileは、イメージを作成するためのすべての手順を含むシンプルなテキストファイルです。「Hello, World!」アプリケーション用のDockerfileの例を作成してみましょう。
 
@@ -1599,4 +1608,300 @@ services:
 volumes:
   mongo_data:
   redis_data:
+------
+
+コンテナのフロント
+
+対象ルートディレクトリにてビルドを実行後 npm run build
+Dockerfileを作成
+----
+FROM node:24
+
+WORKDIR /usr/src/app
+
+COPY . .
+
+RUN npm ci
+
+RUN npm run build
+
+RUN npm install -g serve
+CMD ["serve", "-n", "dist"]
+----
+
+以下コンテナのビルド実行
+docker build . -t hello-front
+
+内容確認
+docker run -it hello-front bash
+
+コンテナ内にNodeが既に存在する場合、静的ファイルを配信するための有効なオプションは、  serveコマンドです。（新しいタブで開きます）それでは、コンテナ内でserveをインストールし、静的ファイルを配信してみましょう。
+
+npm install -g serve
+serve -n dist
+
+
+docker build . -t hello-front （ビルド）
+意味： 現在のフォルダ（.）にある Dockerfile を読み込んで、**「hello-front という名前のDockerイメージ（アプリのパッケージ）」**を作る。
+docker run -p 5001:3000 hello-front
+意味： さっき作った hello-front というイメージを使って、実際にコンテナを起動する。その際、パソコンの 5001 番ポートと、コンテナの中の 3000 番ポートを繋ぐ。
+
+serveコマンドは 有効な 選択肢ではありますが、もっと良い方法があります。理想的な目標は、無関係なものを一切含まないDockerイメージを作成すること
+
+---
+# The first FROM is now a stage called build-stage
+FROM node:24 AS build-stage
+WORKDIR /usr/src/app
+
+COPY . .
+
+RUN npm ci
+
+RUN npm run build
+
+# This is a new stage, everything before this is gone, except for the files that we want to COPY
+FROM nginx:1.29-alpine
+
+# COPY the directory dist from the build-stage to /usr/share/nginx/html
+# The target location here was found from the Docker hub page
+COPY --from=build-stage /usr/src/app/dist /usr/share/nginx/html
+---
+
+docker build . -t todoapp-front
+docker run -p 8000:80 todoapp-front
+---
+FROM node:22 AS build-stage
+WORKDIR /usr/src/app
+COPY . .
+ARG VITE_BACKEND_URL=http://localhost:3000
+RUN npm ci
+RUN npm test #テストを挟むことも可能。失敗したら止まる。
+RUN npm run build
+FROM nginx:1.29-alpine
+
+COPY --from=build-stage /usr/src/app/dist /usr/share/nginx/html
+---
+
+
+dev.Dockerfileという新しいファイル
+-----
+FROM node:24
+
+WORKDIR /usr/src/app
+
+COPY . .
+
+# Change npm ci to npm install since we are going to be in development mode
+RUN npm install
+
+# npm run dev is the command to start the application in development mode
+CMD ["npm", "run", "dev", "--", "--host"]
+-----
+
+docker build -f ./dev.Dockerfile -t hello-front-dev .
+docker run -it -v "$(pwd):/usr/src/app/" hello-front-dev bash
+
+設定ファイルを docker-compose.dev.ymlに、開発モードでコンテナを起動できえるように。いままでのは本番モード
+----
+services:
+  app:
+    image: hello-front-dev
+    build:
+      context: . # The context will pick this directory as the "build context"
+      dockerfile: dev.Dockerfile # This will simply tell which dockerfile to read
+    volumes:
+      - ./:/usr/src/app # The path can be relative, so ./ is enough to say "the same location as the docker-compose.yml"
+      - /usr/src/app/node_modules 
+    ports:
+      - 5173:5173
+    container_name: hello-front-dev # This will name the container hello-front-dev
+----
+docker compose -f docker-compose.dev.yml up
+
+コンテナ内でnpm install axios新しい依存関係をインストールすることです。例えば、 のようにする代わりに、実行中のコンテナ内で のようにするdocker exec hello-front-dev npm install axios
+
+busybox は必要なツールが複数含まれた小さな実行ファイル
+BusyBoxを組み込むには、docker-compose.dev.ymlを次のように変更します。
+-----
+services:
+  app:
+    image: hello-front-dev
+    build:
+      context: .
+      dockerfile: dev.Dockerfile
+    volumes:
+      - ./:/usr/src/app
+    ports:
+      - 5173:5173
+    container_name: hello-front-dev
+
+  debug-helper:
+    image: busybox
+-----
+
+BusyboxのDnsを使用してみる
+docker compose -f docker-compose.dev.yml run debug-helper wget --header="Host: localhost" -O - http://app:5173
+
+vite.config.jsファイルを編集
+----
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    allowedHosts: ['app', 'localhost'],
+  }
+})
+----
+app,localhostは受付していい
+この状態なら
+docker compose -f docker-compose.dev.yml run debug-helper wget --header="Host: localhost" -O - http://app:5173
+ではなく
+docker compose -f docker-compose.dev.yml run debug-helper wget -O - http://app:5173
+で行ける
+
+
+リバースプロキシの実装
+フロント側でnginx.dev.confを作成
+----
+# events is required, but defaults are ok
+events { }
+
+# A http server, listening at port 80
+http {
+  server {
+    listen 80;
+
+    # Requests starting with root (/) are handled
+    location / {
+      # The following 3 lines are required for the hot reload to work
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection 'upgrade';
+      
+      # Requests are directed to http://localhost:5173
+      proxy_pass http://localhost:5173;
+    }
+  }
+}
+----
+
+docker-compose.dev.ymlに上記の設定を組み込み
+
+---
+services:
+  app:
+    # ...
+  nginx:
+    image: nginx:1.29
+    volumes:
+      - ./nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - 8080:80
+    container_name: reverse-proxy
+    depends_on:
+      - app # wait for the frontend container to be started
+---
+
+
+フロントとバックエンドの上位ディレクトリでファイルをまとめられる
+docker-compose.dev.yml(portはなくてもnginxのポートだけ記載されていればもんだいはない)
+-----
+services:
+  server:
+    image: hello-back-dev
+    build:
+      context: ./todo-backend
+      dockerfile: dev.Dockerfile
+    volumes:
+      - ./todo-backend/:/usr/src/app # The path can be relative, so ./ is enough to say "the same location as the docker-compose.yml"
+      - /usr/src/app/node_modules
+    ports:
+      - 3000:3000
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - MONGO_URL=mongodb://root:example@mongo:27017/the_database?authSource=admin
+  mongo:
+    image: mongo
+    ports:
+      - 3456:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_DATABASE: the_database
+    volumes:
+      - ./todo-backend/mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+      - mongo_data:/data/db
+
+  redis:
+    image: redis:alpine
+    ports:
+      - 6379:6379
+    command: ["redis-server", "--appendonly", "yes"] # Overwrite the CMD
+    volumes:
+      - redis_data:/data
+
+  app:
+    image: hello-front-dev
+    build:
+      context: ./todo-frontend # The context will pick this directory as the "build context"
+      dockerfile: dev.Dockerfile # This will simply tell which dockerfile to read
+    volumes:
+      - ./todo-frontend/:/usr/src/app # The path can be relative, so ./ is enough to say "the same location as the docker-compose.yml"
+      - /usr/src/app/node_modules
+    ports:
+      - 5173:5173
+    container_name: hello-front-dev # This will name the container hello-front-dev
+
+  nginx:
+    image: nginx:1.29
+    volumes:
+      - ./nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - 8080:80
+    container_name: reverse-proxy
+    depends_on:
+      - app # wait for the frontend container to be started
+      - server # wait for the backend container to be started
+
+  debug-helper:
+    image: busybox
+
+volumes:
+  mongo_data:
+  redis_data:
+
+-----
+nginx.dev.conf
+------
+# events is required, but defaults are ok
+events { }
+
+# A http server, listening at port 80
+http {
+  server {
+    listen 80;
+
+    # Requests starting with root (/) are handled
+    location / {
+      # The following 3 lines are required for the hot reload to work
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection 'upgrade';
+      
+      # Requests are directed to http://localhost:5173
+      proxy_pass http://app:5173;
+    }
+# Requests starting with /api/ are handled
+    location /api/ {
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection 'upgrade';
+
+      proxy_pass http://server:3000/; #/があると/api/が削られる。ないと/api/もついてくる
+    }
+
+  }
+}
 ------
