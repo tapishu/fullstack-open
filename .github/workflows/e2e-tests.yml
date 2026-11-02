@@ -2,7 +2,7 @@ name: E2E Tests
 
 on:
   push:
-    branches: [ xmain, xmaster ]
+    branches: [ main, master ]
 
 jobs:
   e2e-tests:
@@ -16,18 +16,18 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '22'
 
       - name: Build todo-backend image
-        working-directory: ./todo-app/todo-backend
+        working-directory: part12/todo-app/todo-backend
         run: docker build -t todo-backend -f Dockerfile .
 
       - name: Build todo-frontend image
-        working-directory: ./todo-app/todo-frontend
+        working-directory: part12/todo-app/todo-frontend
         run: docker build -t todo-front -f Dockerfile .
 
       - name: Start todo-app with Docker Compose
-        working-directory: ./todo-app
+        working-directory: part12/todo-app
         run: docker compose up -d
 
       - name: Wait for services to be ready
@@ -40,15 +40,15 @@ jobs:
         run: docker ps
 
       - name: Install dependencies
-        working-directory: ./todo-tests
+        working-directory: part12/todo-tests
         run: npm ci
 
       - name: Install Playwright browsers
-        working-directory: ./todo-tests
+        working-directory: part12/todo-tests
         run: npx playwright install --with-deps chromium
 
       - name: Run Playwright tests
-        working-directory: ./todo-tests
+        working-directory: part12/todo-tests
         run: npm run test:e2e
 
       - name: Upload Playwright report
@@ -56,7 +56,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: todo-tests/playwright-report/
+          path: part12/todo-tests/playwright-report/
           retention-days: 7
 
       - name: Upload test results
@@ -64,12 +64,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: todo-tests/test-results/
+          path: part12/todo-tests/test-results/
           retention-days: 7
 
       - name: Show container logs on failure
         if: failure()
-        working-directory: ./todo-app
+        working-directory: part12/todo-app
         run: |
           echo "=== Backend logs ==="
           docker compose logs backend
