@@ -80,5 +80,5 @@ jobs:
 
       - name: Clean up Docker containers
         if: always()
-        working-directory: ./todo-app
+        working-directory: part12//todo-app
         run: docker compose down -v
