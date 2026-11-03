@@ -1369,7 +1369,7 @@ docker exec -it wonderful_ramanujan bash
 docker exec -it <コンテナ名またはID> mongosh
 docker exec -it todo-backend-redis-1 redis-cli
 
-====困った時のコマンド====
+====Compose関連のコマンド====
 指定したComposeファイル（docker-compose.dev.yml）の中に、実際にどんなサービス（コンテナ）が定義されているかをリスト形式で確認するコマンド
 docker compose -f docker-compose.dev.yml config --services
 現在動いている（あるいは過去に残骸として残っていた）コンテナを停止・削除し、Dockerネットワークや古いキャッシュを完全にきれいにするコマンドです。末尾の --remove-orphans は、設定ファイルから消えた不要なコンテナがあれば一緒に片付けてくれるオプションです。
@@ -1905,3 +1905,14 @@ http {
   }
 }
 ------
+
+Docker環境でNginxを挟んでVite（フロントエンド）を動かしているとき、Nginxから転送されてきたホスト名（app）がViteの許可リストに含まれていないため、このブロックが発生しています。vite.config.js をひらく
+----
+export default defineConfig({
+  // ...他の設定
+  server: {
+    host: true, // 必要に応じて
+    allowedHosts: ['app']
+  }
+})
+----
