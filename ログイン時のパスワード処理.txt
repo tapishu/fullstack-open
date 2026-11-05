@@ -1,0 +1,53 @@
+
+npm install jsonwebtoken
+npm install bcrypt
+
+####ログイン関連時にパスワードハッシュを行う方法###
+Userデータベース上でハッシュかされたパスワードの保存
+User作成のAPI POSTでusername,passwordを取得しパスワードのハッシュ化（bcrypt の使用）を行う
+const saltRounds = 10
+const passwordHash = await bcrypt.hash(password, saltRounds)
+*生のパスワードは保存しない。saltRounds = 10 はハッシュ化の計算コスト（難易度）は高いほどいいらしい
+const user = await User.create({
+      username,
+      name,
+      passwordHash
+    })
+それをデータベースに保存
+
+ログイン時のAPI
+----
+router.post('/', async (request, response) => {
+const { username, password } = request.body
+
+１.入力されたusernameを元にデータベースからレコードを探す
+  const user = await User.findOne({
+    where: {
+      username: username
+    }
+  })
+  
+2.ユーザーが存在するのであれば、入力されたパスワードをハッシュ化し、データベース上のハッシュ化されたパスワードと比較。
+const passwordCorrect = user === null
+    ? false
+    : await bcrypt.compare(password, user.passwordHash)
+
+  if (!(user && passwordCorrect)) {
+    return response.status(401).json({
+      error: 'invalid username or password'
+    })
+  }
+
+3.ユーザーが存在し、パスワードがあっていれば、トークンの生成
+  const userForToken = {
+    username: user.username,
+    id: user.id,
+  }
+  const token = jwt.sign(userForToken, SECRET)
+
+  response
+    .status(200)
+    .send({ token, username: user.username, name: user.name })
+})
+----
+############################################
