@@ -1338,581 +1338,129 @@ tag_release:
 
 
 Part12 Docker
-コマンド集
-Runで実行-iでインタラクティブ
-docker container run hello-world    
-docker run -it ubuntu bash
-リスト
-docker container ls -a  
-起動と停止　-iはインタラクティブ
-docker start blissful_kare    
-docker start -i blissful_kare
-docker kill blissful_kare 
-イメージの保存　イメージ元　その名前
-docker commit blissful_kare hello-node-world  
-イメージの白紙化
-docker container rm hopeful_clarke
-
-ymlでの起動　停止
-docker compose -f docker-compose.dev.yml up
-docker compose -f docker-compose.dev.yml down
-Docker内のVolumeの操作
-リスト表示
-docker volume ls
-内容確認
-docker volume inspect
-削除
-docker volume rm。
-
-Exec関連のコマンド
-docker exec -it wonderful_ramanujan bash
-docker exec -it <コンテナ名またはID> mongosh
-docker exec -it todo-backend-redis-1 redis-cli
-
-====Compose関連のコマンド====
-指定したComposeファイル（docker-compose.dev.yml）の中に、実際にどんなサービス（コンテナ）が定義されているかをリスト形式で確認するコマンド
-docker compose -f docker-compose.dev.yml config --services
-現在動いている（あるいは過去に残骸として残っていた）コンテナを停止・削除し、Dockerネットワークや古いキャッシュを完全にきれいにするコマンドです。末尾の --remove-orphans は、設定ファイルから消えた不要なコンテナがあれば一緒に片付けてくれるオプションです。
-docker compose -f docker-compose.dev.yml down --remove-orphans
---build: ソースコードやDockerfileの変更を反映して、イメージを作り直す（ビルドする）
-docker compose -f docker-compose.dev.yml up -d --build
-========================
-
-Dockerfile
-コンテナ内のファイルをコピーして変更する代わりに、「Hello, World!」アプリケーションを含む新しいイメージを作成できます。このためのツールはDockerfileです。Dockerfileは、イメージを作成するためのすべての手順を含むシンプルなテキストファイルです。「Hello, World!」アプリケーション用のDockerfileの例を作成してみましょう。
-
-以下のファイル構造の作成
-├── index.js
-└── Dockerfile
-
-Dockerfile中身
---------------------------
-FROM node:24
-
-WORKDIR /usr/src/app
-
-COPY ./index.js ./index.js
-
-CMD ["node", "index.js"]
-
---------------------------
-
-上記をもとにしたコマンド
-docker build -t fs-hello-world . 
-
-ローカルにある画像の一覧は で表示しdocker image ls
-削除は docker image rm
-
-
-Expressサーバーをコンテナに移動するのは、「Hello, World!」アプリケーションをコンテナ内に移動するのと同じくらい簡単です。唯一の違いは、ファイル数が増えることです。幸いなことに、  COPYコマンドですべて処理できます。index.jsを削除して、新しいExpressサーバーを作成しましょう。express -generatorを 使用します。 （新しいタブで開きます） 基本的なExpressアプリケーションの骨組みを作成する。
-
-npx express-generator
-
-npm install
-以下のplaygroundをpackage.jsonのnameに変更する
-DEBUG=playground:* npm start
-
-Dockerfileに以下を足す
----------------------
-FROM node:24
-
-WORKDIR /usr/src/app
-
-COPY . .
-
-ENV DEBUG=playground:*
-
-CMD ["npm", "start"]
----------------------
-
-これで、Dockerfileからイメージをビルドして実行できます。
-
-docker build -t express-server .
-docker run -p 3123:3000 express-server
-左側の 3123: あなたのMac（ホスト側）のポート番号です。
-右側の 3000: コンテナの中で動いているアプリ（Express）のポート番号です。
-
-
-余計な依存関係をインストールしないように.dockerignoreファイルを使用する
-.dockerignore
-.gitignore
-node_modules
-Dockerfile
-
-Dockerfile は以下のように変更されます。
------------
-FROM node:22
-
-WORKDIR /usr/src/app
-
-COPY . .
-
-RUN npm install
-
-ENV DEBUG=express:* 
-
-CMD ["npm", "start"] 
------------
-ビルドステップ中に新しいものをインストールしないため、またバージョンが突然変更されることを望まないため、今回はci を使用します。
------------------
-WORKDIR /usr/src/app
-
-COPY . .
-
-RUN npm ci
-
-ENV DEBUG=express:*
-
-CMD ["npm", "start"]
------------------
-
-残る重要な問題は、アプリケーションが権限の低いユーザーではなく、root権限で実行されていることです。Dockerfileに最後の変更を加え、USER命令を使用してユーザーをroot以外のユーザーに設定しましょう。
------------------
-FROM node:22
-  
-WORKDIR /usr/src/app
-
-COPY --chown=node:node . .
-
-RUN npm ci 
-
-ENV DEBUG=playground:*
-  
-USER node
-
-CMD ["npm", "start"]
------------------
-
-コマンドをDockerComposeで
-docker-compose.ymlファイルを作成し、Dockerfile と同じプロジェクトのルートディレクトリに配置
------
-services:
-  app:                    # The name of the service, can be anything
-    image: express-server # Declares which image to use
-    build: .              # Declares where to build if image is not found
-    ports:                # Declares the ports to publish
-      - 3000:3000
------
-
-docker compose up で使用可能
-docker compose up --build で再構築
-
-Mongo DB imageの作成
-todo-app/todo-backend/docker-compose.dev.yml
-の作成
-環境変数のDATABESEはデータベース名
----
-services:
-  mongo:
-    image: mongo
-    ports:
-      - 3456:27017
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
-      MONGO_INITDB_DATABASE: the_database
----
-
-以下コマンドでコンテナで起動したmongoに接続しながらローカルでのアプリの起動
-MONGO_URL=mongodb://localhost:3456/the_database npm run dev
-
-
-バインドとマウント
-以下のymlにてローカルのmongo-init.jsとコンテナのmongo-init.jsがリンクする
------
-  mongo:
-    image: mongo
-    ports:
-     - 3456:27017
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
-      MONGO_INITDB_DATABASE: the_database
-    volumes:
-    - ./mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
------
-
-
-コンテナに保存領域を作成することでデータをローカルに保存し、gitで送ってしまうようなリスクが消える。
------
-services:
-  mongo:
-    image: mongo
-    ports:
-     - 3456:27017
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
-      MONGO_INITDB_DATABASE: the_database
-    volumes:
-      - ./mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
-      - mongo_data:/data/db
-
-volumes:
-  mongo_data:
------
-
-Redisはデフォルトで保存した内容が消えるデータベース。キャッシュに向いていて高速
-------
-services:
-  mongo:
-    image: mongo
-    ports:
-      - 3456:27017
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
-      MONGO_INITDB_DATABASE: the_database
-    volumes:
-    - ./mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
-    - mongo_data:/data/db
-
-  redis:
-    image: redis:alpine
-    ports:
-      - 6379:6379
-    volumes:
-      - redis_data:/data
-
-volumes:
-  mongo_data:
-  redis_data:
-------
-
-以下コマンドでコンテナで起動したmongo/redisに接続しながらローカルでのアプリの起動
-REDIS_URL=redis://localhost:6379 MONGO_URL=mongodb://root:example@localhost:3456/the_database?authSource=admin npm run dev
-
-redisのデータベースを永続的に保存する方法は以下のコマンドを足す。マウント元のredis_dataは.gitignoreにしまわないとデータが流出
-------
-services:
-  mongo:
-    image: mongo
-    ports:
-      - 3456:27017
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
-      MONGO_INITDB_DATABASE: the_database
-    volumes:
-    - ./mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
-    - mongo_data:/data/db
-
-  redis:
-    image: redis:alpine
-    ports:
-      - 6379:6379
-    command: ['redis-server', '--appendonly', 'yes'] # Overwrite the CMD
-    volumes:
-      - redis_data:/data
-
-volumes:
-  mongo_data:
-  redis_data:
-------
-
-コンテナのフロント
-
-対象ルートディレクトリにてビルドを実行後 npm run build
-Dockerfileを作成
-----
-FROM node:24
-
-WORKDIR /usr/src/app
-
-COPY . .
-
-RUN npm ci
-
-RUN npm run build
-
-RUN npm install -g serve
-CMD ["serve", "-n", "dist"]
-----
-
-以下コンテナのビルド実行
-docker build . -t hello-front
-
-内容確認
-docker run -it hello-front bash
-
-コンテナ内にNodeが既に存在する場合、静的ファイルを配信するための有効なオプションは、  serveコマンドです。（新しいタブで開きます）それでは、コンテナ内でserveをインストールし、静的ファイルを配信してみましょう。
-
-npm install -g serve
-serve -n dist
-
-
-docker build . -t hello-front （ビルド）
-意味： 現在のフォルダ（.）にある Dockerfile を読み込んで、**「hello-front という名前のDockerイメージ（アプリのパッケージ）」**を作る。
-docker run -p 5001:3000 hello-front
-意味： さっき作った hello-front というイメージを使って、実際にコンテナを起動する。その際、パソコンの 5001 番ポートと、コンテナの中の 3000 番ポートを繋ぐ。
-
-serveコマンドは 有効な 選択肢ではありますが、もっと良い方法があります。理想的な目標は、無関係なものを一切含まないDockerイメージを作成すること
-
----
-# The first FROM is now a stage called build-stage
-FROM node:24 AS build-stage
-WORKDIR /usr/src/app
-
-COPY . .
-
-RUN npm ci
-
-RUN npm run build
-
-# This is a new stage, everything before this is gone, except for the files that we want to COPY
-FROM nginx:1.29-alpine
-
-# COPY the directory dist from the build-stage to /usr/share/nginx/html
-# The target location here was found from the Docker hub page
-COPY --from=build-stage /usr/src/app/dist /usr/share/nginx/html
----
-
-docker build . -t todoapp-front
-docker run -p 8000:80 todoapp-front
----
-FROM node:22 AS build-stage
-WORKDIR /usr/src/app
-COPY . .
-ARG VITE_BACKEND_URL=http://localhost:3000
-RUN npm ci
-RUN npm test #テストを挟むことも可能。失敗したら止まる。
-RUN npm run build
-FROM nginx:1.29-alpine
-
-COPY --from=build-stage /usr/src/app/dist /usr/share/nginx/html
----
-
-
-dev.Dockerfileという新しいファイル
------
-FROM node:24
-
-WORKDIR /usr/src/app
-
-COPY . .
-
-# Change npm ci to npm install since we are going to be in development mode
-RUN npm install
-
-# npm run dev is the command to start the application in development mode
-CMD ["npm", "run", "dev", "--", "--host"]
------
-
-docker build -f ./dev.Dockerfile -t hello-front-dev .
-docker run -it -v "$(pwd):/usr/src/app/" hello-front-dev bash
-
-設定ファイルを docker-compose.dev.ymlに、開発モードでコンテナを起動できえるように。いままでのは本番モード
-----
-services:
-  app:
-    image: hello-front-dev
-    build:
-      context: . # The context will pick this directory as the "build context"
-      dockerfile: dev.Dockerfile # This will simply tell which dockerfile to read
-    volumes:
-      - ./:/usr/src/app # The path can be relative, so ./ is enough to say "the same location as the docker-compose.yml"
-      - /usr/src/app/node_modules 
-    ports:
-      - 5173:5173
-    container_name: hello-front-dev # This will name the container hello-front-dev
-----
-docker compose -f docker-compose.dev.yml up
-
-コンテナ内でnpm install axios新しい依存関係をインストールすることです。例えば、 のようにする代わりに、実行中のコンテナ内で のようにするdocker exec hello-front-dev npm install axios
-
-busybox は必要なツールが複数含まれた小さな実行ファイル
-BusyBoxを組み込むには、docker-compose.dev.ymlを次のように変更します。
------
-services:
-  app:
-    image: hello-front-dev
-    build:
-      context: .
-      dockerfile: dev.Dockerfile
-    volumes:
-      - ./:/usr/src/app
-    ports:
-      - 5173:5173
-    container_name: hello-front-dev
-
-  debug-helper:
-    image: busybox
------
-
-BusyboxのDnsを使用してみる
-docker compose -f docker-compose.dev.yml run debug-helper wget --header="Host: localhost" -O - http://app:5173
-
-vite.config.jsファイルを編集
-----
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    allowedHosts: ['app', 'localhost'],
+については別途のファイルで
+
+part13 Relational Databese
+
+コンテナでPostgresの使用　＊パスワード変更してな
+docker run -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 postgres
+
+docker ps でIDチェック
+
+docker exec -it ff3f49eadf27 psql -U postgres postgres
+コンテナ上で操作可能
+
+psqlコマンド
+\d データベースの内容を表示する
+\d notes
+ 
+追加コマンド
+CREATE TABLE notes (
+    id SERIAL PRIMARY KEY,
+    content text NOT NULL,
+    important boolean,
+    date time
+);
+値の追加
+insert into notes (content, important) values ('Relational databases rule the world', true);
+insert into notes (content, important) values ('MongoDB is webscale', false);
+
+insert into blogs (author, URL ,title, likes) values ('Suzuki', "https://en.wikipedia.org/wiki/Ring_(Suzuki_novel)","Ring", 100);
+insert into notes (content, important) values ('MongoDB is webscale', false);
+
+リレーショナルデータベースを使用したNodeアプリケーション
+通常通りnpm initでアプリケーションを起動し  、 開発依存関係としてnodemon をインストールし 、さらに以下の実行時依存関係もインストールします。
+npm install express dotenv pg sequelize
+
+データベースに接続できるかどうかをテストしてみましょう。index.jsというファイルを作成し、以下の内容を追加してください。
+-------
+require('dotenv').config()
+const { Sequelize } = require('sequelize')
+
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialect: 'postgres',
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false
+    }
   }
 })
-----
-app,localhostは受付していい
-この状態なら
-docker compose -f docker-compose.dev.yml run debug-helper wget --header="Host: localhost" -O - http://app:5173
-ではなく
-docker compose -f docker-compose.dev.yml run debug-helper wget -O - http://app:5173
-で行ける
 
-
-リバースプロキシの実装
-フロント側でnginx.dev.confを作成
-----
-# events is required, but defaults are ok
-events { }
-
-# A http server, listening at port 80
-http {
-  server {
-    listen 80;
-
-    # Requests starting with root (/) are handled
-    location / {
-      # The following 3 lines are required for the hot reload to work
-      proxy_http_version 1.1;
-      proxy_set_header Upgrade $http_upgrade;
-      proxy_set_header Connection 'upgrade';
-      
-      # Requests are directed to http://localhost:5173
-      proxy_pass http://localhost:5173;
-    }
+const main = async () => {
+  try {
+    await sequelize.authenticate()
+    console.log('Connection has been established successfully.')
+    sequelize.close()
+  } catch (error) {
+    console.error('Unable to connect to the database:', error)
   }
 }
-----
 
-docker-compose.dev.ymlに上記の設定を組み込み
-
+main()
+-------
+データベースアドレスと認証情報を含むデータベース接続文字列は、 .envファイルで定義する必要があります。
+Aivenを使用している場合、 .envファイルの内容は次のようになります。
 ---
-services:
-  app:
-    # ...
-  nginx:
-    image: nginx:1.29
-    volumes:
-      - ./nginx.dev.conf:/etc/nginx/nginx.conf:ro
-    ports:
-      - 8080:80
-    container_name: reverse-proxy
-    depends_on:
-      - app # wait for the frontend container to be started
+DATABASE_URL=postgres://userhere:passwordhere@hostnamehere.aivencloud.com:10789/defaultdb
+---
+?sslmode=require接続文字列から必ず削除してください！
+
+Dockerを使用する場合、接続文字列は次のとおりです。
+----
+DATABASE_URL=postgres://postgres:mysecretpassword@localhost:5432/postgres
 ---
 
-
-フロントとバックエンドの上位ディレクトリでファイルをまとめられる
-docker-compose.dev.yml(portはなくてもnginxのポートだけ記載されていればもんだいはない)
------
-services:
-  server:
-    image: hello-back-dev
-    build:
-      context: ./todo-backend
-      dockerfile: dev.Dockerfile
-    volumes:
-      - ./todo-backend/:/usr/src/app # The path can be relative, so ./ is enough to say "the same location as the docker-compose.yml"
-      - /usr/src/app/node_modules
-    ports:
-      - 3000:3000
-    environment:
-      - REDIS_URL=redis://redis:6379
-      - MONGO_URL=mongodb://root:example@mongo:27017/the_database?authSource=admin
-  mongo:
-    image: mongo
-    ports:
-      - 3456:27017
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
-      MONGO_INITDB_DATABASE: the_database
-    volumes:
-      - ./todo-backend/mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
-      - mongo_data:/data/db
-
-  redis:
-    image: redis:alpine
-    ports:
-      - 6379:6379
-    command: ["redis-server", "--appendonly", "yes"] # Overwrite the CMD
-    volumes:
-      - redis_data:/data
-
-  app:
-    image: hello-front-dev
-    build:
-      context: ./todo-frontend # The context will pick this directory as the "build context"
-      dockerfile: dev.Dockerfile # This will simply tell which dockerfile to read
-    volumes:
-      - ./todo-frontend/:/usr/src/app # The path can be relative, so ./ is enough to say "the same location as the docker-compose.yml"
-      - /usr/src/app/node_modules
-    ports:
-      - 5173:5173
-    container_name: hello-front-dev # This will name the container hello-front-dev
-
-  nginx:
-    image: nginx:1.29
-    volumes:
-      - ./nginx.dev.conf:/etc/nginx/nginx.conf:ro
-    ports:
-      - 8080:80
-    container_name: reverse-proxy
-    depends_on:
-      - app # wait for the frontend container to be started
-      - server # wait for the backend container to be started
-
-  debug-helper:
-    image: busybox
-
-volumes:
-  mongo_data:
-  redis_data:
-
------
-nginx.dev.conf
-------
-# events is required, but defaults are ok
-events { }
-
-# A http server, listening at port 80
-http {
-  server {
-    listen 80;
-
-    # Requests starting with root (/) are handled
-    location / {
-      # The following 3 lines are required for the hot reload to work
-      proxy_http_version 1.1;
-      proxy_set_header Upgrade $http_upgrade;
-      proxy_set_header Connection 'upgrade';
-      
-      # Requests are directed to http://localhost:5173
-      proxy_pass http://app:5173;
-    }
-# Requests starting with /api/ are handled
-    location /api/ {
-      proxy_http_version 1.1;
-      proxy_set_header Upgrade $http_upgrade;
-      proxy_set_header Connection 'upgrade';
-
-      proxy_pass http://server:3000/; #/があると/api/が削られる。ないと/api/もついてくる
-    }
-
-  }
-}
-------
-
-Docker環境でNginxを挟んでVite（フロントエンド）を動かしているとき、Nginxから転送されてきたホスト名（app）がViteの許可リストに含まれていないため、このブロックが発生しています。vite.config.js をひらく
+モデル
+Sequelizeを使用する場合、データベース内の各テーブルは モデルによって表現されます。（新しいタブで開きます）これは実質的に独自の JavaScript クラスです。それでは、 アプリケーションの 表 の注釈に対応するモデルNote を定義する ために、コードを次の形式に変更しましょう。
 ----
-export default defineConfig({
-  // ...他の設定
-  server: {
-    host: true, // 必要に応じて
-    allowedHosts: ['app']
+require('dotenv').config()
+const { Sequelize, Model, DataTypes } = require('sequelize')
+const express = require('express')
+const app = express()
+
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false
+    }
+  },
+});
+
+class Note extends Model {}
+Note.init({
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  content: {
+    type: DataTypes.TEXT,
+    allowNull: false
+  },
+  important: {
+    type: DataTypes.BOOLEAN
+  },
+  date: {
+    type: DataTypes.DATE
   }
+}, {
+  sequelize,
+  underscored: true,
+  timestamps: false,
+  modelName: 'note'
+})
+
+const PORT = process.env.PORT || 3001
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`)
 })
 ----
+
+コンソールからテーブルの削除
+drop table notes;
+
+
+
+
