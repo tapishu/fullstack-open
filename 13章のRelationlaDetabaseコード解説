@@ -1,0 +1,72 @@
+model/index
+###################################################################
+const Blog = require('./blog')
+const User = require('./user')
+const Reading_lists = require('./reading_list')
+
+User.hasMany(Blog)
+Blog.belongsTo(User) //テーブルが存在しなければ実行される
+ユーザーのモデルにBookがなくともここでUserBlog間に関係があることを提示
+
+Reading_listsという中間DBを通してUser-Blog間でお互いを呼べるようにする。
+asは呼び出し時に使うためのもの
+User.belongsToMany(Blog, { through: Reading_lists, as: 'readings' })
+Blog.belongsToMany(User, { through: Reading_lists, as: 'reading_users' })
+
+
+module.exports = {
+  Blog,User,Reading_lists
+}
+
+###################################################################
+
+###################################################################
+Reading_lists.init({
+      id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+      },
+      user_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: { model: 'users', key: 'id' },
+      },
+      blog_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: { model: 'blogs', key: 'id' },
+      },
+      read: {
+        type: DataTypes.BOOLEAN,
+        // allowNull: false,
+        defaultValue: false
+      },
+},
+###################################################################
+
+上記の情報を元にクエリーで呼び出す時
+
+###################################################################
+router.get('/:id', async (req, res) => {
+  const user = await User.findByPk(req.params.id,{
+    attributes:['name', 'username'] ,
+    include:[{
+      model: Blog,
+      as: 'readings', //中間DBを介して該当ユーザーが登録したBlogを呼び出す
+      attributes: { exclude: ['userId', 'createdAt', 'updatedAt'] },
+      //ここでuserとblogのもづきのみが必要で中間データをよびだしたが、中間データにあるidやreadも付いてくる。
+      //throughは中間データをいじるものであり、attributeに必要なものを絞り込む。空欄ならなにも表示させない。
+      through: {
+          attributes: [] 
+        }
+    }]
+  })
+  if (user) {
+    res.json(user)
+  } else {
+    res.status(404).end()
+  }
+})                   
+###################################################################
+                   
