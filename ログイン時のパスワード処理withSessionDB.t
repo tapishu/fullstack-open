@@ -3,6 +3,10 @@ npm install jsonwebtoken
 npm install bcrypt
 
 一つ前の方法に加えてDBにトークンを保存する方法
+ログイン時にセッションDBへuseridとtokenを保存
+ポスト時にはトークンがセッションDBに存在するのと一致している事を確認
+ログアウト時は、トークンをデコードし、useridをわりだし、セッションDBからがいとうのuseridとtokenをdestroyさせる
+
 
 ####ログイン関連時にパスワードハッシュを行う方法###
 Userデータベース上でハッシュかされたパスワードの保存
@@ -45,7 +49,10 @@ const passwordCorrect = user === null
     username: user.username,
     id: user.id,
   }
+//userForTokenに鍵をかける感じ、開けるとuserForTokenがでてくる
   const token = jwt.sign(userForToken, SECRET)
+
+session dbに追加する
 
   response
     .status(200)
