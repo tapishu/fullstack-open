@@ -60,19 +60,9 @@ const tokenExtractor = async  (req, res, next) => {
   if (authorization && authorization.toLowerCase().startsWith('bearer ')) {
     try {
       const token = authorization.substring(7)
-      const decodedToken = jwt.verify(token, SECRET)
-
-      // 1. データベースにそのセッション（トークン）が存在するか確認！
-      const session = await Session.findOne({
-        where: {
-          userId: decodedToken.id,
-          token: token
-        }
-
-      })
-      if (!session) {
-        return res.status(401).json({ error: 'token missing or invalid (logged out)' })
-      }
+      const decodedToken = jwt.verify(token, SECRET)      
+      // jwt.verify が成功すれば、「改ざんされていなくて、有効期限内だ」とみなす
+      req.token = token
 
     const user = await User.findByPk(decodedToken.id)
       if (!user || user.disabled) {
