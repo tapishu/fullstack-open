@@ -49,10 +49,15 @@ const passwordCorrect = user === null
     username: user.username,
     id: user.id,
   }
-//userForTokenに鍵をかける感じ、開けるとuserForTokenがでてくる
-  const token = jwt.sign(userForToken, SECRET)
-
-session dbに追加する
+//ここでいうトークンはuserForTokenにSERCRETで鍵をかけたもの。鍵をあけるとuserForTokenが出てくる
+  const token = jwt.sign(userForToken, SECRET,
+    { expiresIn: '2h' } // ← ここで有効期限を指定！
+  )
+//DBに反映
+await Session.create({
+    userId: user.id,
+    token: token // 発行したトークンをそのまま保存
+  })
 
   response
     .status(200)
