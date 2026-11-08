@@ -1472,3 +1472,153 @@ Sequelizeコマンドラインツールを使用して、コマンドライン�
 
 npm install umzug
 
+
+Part14 Next.js
+
+create-next-appツールを使用して Next.js アプリを作成します 
+npx create-next-app@latest notes-app
+
+最初に、  layout.tsxファイルの内容を 以下のように変更してください。
+--------------------------------------
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  )
+}
+--------------------------------------
+次にcontent  page.tsx
+--------------------------------------
+const Home = () => {
+  return <div>hello next.js</div>
+}
+export default Home
+--------------------------------------
+
+Next.jsでは、 アプリ ディレクトリ 内のコンポーネントはデフォルトでReact Server Componentsになります 。これまで記述してきた従来のReactコンポーネントとは異なり、Server Componentsはブラウザではなくサーバー上でレンダリングされます。
+
+
+静止画レンダリング
+開発段階ではアプリは問題なく動作するように見えます。しかし、本番環境向けにアプリケーションをビルドして実行すると、問題が発生します。
+
+アプリを構築して、本番環境で起動してみましょう
+
+変更後にキャッシュされたページが古くなっていることを Next.js に伝えることです。これは revalidatePathを使用して行います。
+---------
+"use server"
+
+import { redirect } from "next/navigation"
+import { addBlog } from "../services/blogs"
+import { revalidatePath } from "next/cache"
+
+export const createBlog = async (formData: FormData) => {
+  const title = formData.get("title") as string
+  const author = formData.get("author") as string
+  const url = formData.get("url") as string
+  const likes = Number(formData.get("likes")) as number
+
+
+  addBlog(title, author,url,likes)
+
+    revalidatePath("/blogs")
+
+  redirect("/blogs")
+}
+---------
+
+次に各ノートごとに個別のビューを作成し、ID 10 のノートが URL notes/10 のページに表示されるようにします。そのためには、 動的なルートセグメントが必要です。Next.js App ルーターでこれを定義する方法は非常に興味深いものです。
+ディレクトリ/app/notes/[id]を作成し  、その中に通常のファイル page.tsx を作成します 。
+
+Full Stack Openの以前のパートでは、バックエンドを Render または Fly.ioにデプロイしていました。Next.jsの場合、最も自然なデプロイ先は 、Next.jsを開発・保守しているVercelです
+Vercelは、 Neonを基盤とした マネージドPostgreSQLデータベース 「Vercel Postgres」を提供
+
+データベースを作成するには、Vercelダッシュボードにアクセスし、以下の手順に従ってください。
+
+先ほどデプロイしたプロジェクトを開きます。
+ストレージ タブに移動します 
+「データベースの作成」をクリックします。 
+Postgres (Neon)を選択し  、  「続行」をクリックします。
+デプロイメントに近いリージョンを選択し、  「作成」をクリックします。
+データベースに名前を付け（例：  notes-db）、  [作成]をクリックします。
+
+開発中に同じデータベースをローカルで使用するには、Vercelダッシュボードから接続文字列をコピーし、  プロジェクトのルートディレクトリに.env.localファイルを作成します。
+
+DATABASE_URL="postgresql://user:password@host:5432/dbname?sslmode=require"
+Vercelダッシュボードから取得した実際の接続文字列に値を置き換えてください。Next.jsは 開発中に.env.localを自動的に読み込む ため、追加の設定は不要です。
+
+Drizzle ORMを使用したデータベースアクセス
+npm install drizzle-orm @neondatabase/serverless
+npm install -D drizzle-kit
+
+SequelizeではなくDrizzleを選ぶ理由とは？ DrizzleはTypeScriptを第一級の要素として設計されています。データベーススキーマはTypeScriptで定義され、Drizzleは完全に型付けされたクエリ結果を自動的に生成します。つまり、スキーマでノートに content  （文字列）と important  （ブール値）があると定義されていれば、すべてのクエリ結果がそれに応じて型付けされ、コードを実行する前にコンパイラがエラーを検出します。また、Drizzleは手動で記述するSQLに非常に近いSQLを生成するため、内部で何が起こっているかを容易に理解できます。さらに、DrizzleはVercelのようなサーバーレス環境を強力にサポートしており、接続を慎重に管理する必要がありません。
+
+以下の内容のファイルdb/schema.tsを作成します。
+------
+import { pgTable, serial, text, boolean } from "drizzle-orm/pg-core"
+
+export const notes = pgTable("notes", {
+  id: serial("id").primaryKey(),
+  content: text("content").notNull(),
+  important: boolean("important").notNull().default(false),
+})
+------
+
+db/index.ts
+------
+import { drizzle } from "drizzle-orm/neon-http"
+import * as schema from "./schema"
+
+export const db = drizzle(process.env.DATABASE_URL!, { schema })
+------
+
+プロジェクトルートにあるdrizzle.config.tsファイルとして作成します。
+
+------
+import { defineConfig } from "drizzle-kit"
+
+import * as dotenv from "dotenv"
+dotenv.config({ path: ".env.local" })
+
+export default defineConfig({
+  schema: "./db/schema.ts",
+  out: "./drizzle",
+  dialect: "postgresql",
+  dbCredentials: {
+    url: process.env.DATABASE_URL!,
+  },
+})
+------
+Drizzle Kitにスキーマの場所、移行ファイルの出力先、およびデータベースへの接続方法を指示します。
+さらに、以下の2つのパッケージをインストールする必要があります。
+npm install --save-dev dotenv postgres
+
+これでマイグレーションを生成し、データベースに適用できます。
+npx drizzle-kit generate
+さっき作った db/schema.ts などのスキーマ定義を読み取って、「こういうテーブルをデータベースに作るためのSQLファイル（設計図）」を自動で生成するコマンド
+
+npx drizzle-kit migrate
+さっき生成したSQLファイル（マイグレーションファイル）を、.env.local で繋いだ本番・リモートのデータベース（さっきのNeonのPostgreSQL）に実際に流し込んで、テーブルを実体化（作成）させるコマンド。
+
+テーブルが作成されたことを確認するには、次のコマンドを実行します。
+npx drizzle-kit studio
+
+app/services/notes.ts を以下のように変更します  。
+------
+import { eq } from "drizzle-orm"
+import { db } from "../../db"
+import { notes } from "../../db/schema"
+
+export const getNotes = async () => {
+  return db.query.notes.findMany()
+}
+
+// ...
+------
+
+
+
