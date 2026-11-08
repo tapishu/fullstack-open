@@ -29,7 +29,10 @@
 import Link from "next/link"
 import { getNotes } from "../services/notes"
 
-const Notes = async ({
+import { Suspense } from "react" // ① Suspenseをインポート
+
+
+const NotesContent = async ({
   searchParams,
 }: {
   searchParams: Promise<{ important?: string }>
@@ -43,7 +46,7 @@ const Notes = async ({
 
   return (
     <div>
-      <h2>Notes</h2>
+      {/* <h2>Notes</h2> */}
       <div>
         <Link href={showImportant ? "/notes" : "/notes?important=true"}>
           {showImportant ? "show all" : "show important only"}
@@ -58,6 +61,21 @@ const Notes = async ({
           </li>
         ))}
       </ul>
+    </div>
+  )
+}
+
+const Notes = ({
+  searchParams,
+}: {
+  searchParams: Promise<{ important?: string }>
+}) =>{
+  return(
+    <div>
+      <h2>Notes</h2>
+      <Suspense fallback={<div>Loading notes</div>}>
+      <NotesContent searchParams={searchParams} />
+      </Suspense>
     </div>
   )
 }
