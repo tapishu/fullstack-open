@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation"
 import { getBlogById } from "../../services/blogs"
 import { increaseLike } from "../../actions/blogs"
-
-const BlogPage = async ({ params }: { params: Promise<{ id: string }> }) => {
+import { Suspense } from "react"
+const BlogPageContent = async ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params
   const blog = getBlogById(Number(id))
 
@@ -24,5 +24,16 @@ const BlogPage = async ({ params }: { params: Promise<{ id: string }> }) => {
     </div>
   )
 }
+const BlogPage = async ({ params }: { params: Promise<{ id: string }> }) => {
+return(
+    <div>
+        <Suspense fallback={<div>Loading</div>}>
+        <BlogPageContent params={params}/>
+        </Suspense>
+    </div>
+)
+
+}
+
 
 export default BlogPage

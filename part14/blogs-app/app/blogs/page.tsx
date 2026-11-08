@@ -1,7 +1,8 @@
 import {getBlogs} from "../services/blogs"
 import Link from "next/link"
+import { Suspense } from "react" // ① Suspenseをインポート
 
-const Blogs = async({
+const BlogsContent = async({
   searchParams,
 }:{
   searchParams: Promise<{filter?: string}>
@@ -14,10 +15,8 @@ const filterExist = Boolean(filter)
 const sortedBlogs = [...Allblogs].sort((a,b) => b.likes - a.likes)
 const blogs = filterExist && filter ? sortedBlogs.filter((blog) => blog.title.toLowerCase().includes(filter.toLowerCase())) : sortedBlogs
 
-
   return (
     <div>
-      <h2>Blogs</h2>
       <form method="GET">
         <input 
           type="text" 
@@ -47,4 +46,21 @@ const blogs = filterExist && filter ? sortedBlogs.filter((blog) => blog.title.to
     </div>
   )
 }
+
+const Blogs =({
+  searchParams,
+}:{
+  searchParams: Promise<{filter?: string}>
+}) => {
+  return (
+<div>
+  <h2>Blogs</h2>
+  <Suspense fallback={<div>Loading..</div>}>
+  <BlogsContent searchParams={searchParams} />
+  </Suspense>
+  
+</div>
+  )
+}
+
 export default Blogs
