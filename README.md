@@ -1607,6 +1607,9 @@ npx drizzle-kit migrate
 テーブルが作成されたことを確認するには、次のコマンドを実行します。
 npx drizzle-kit studio
 
+ローカルの移行履歴を削除して、Drizzle Kitが以前に生成されたすべての移行を忘れるようにします。
+npx drizzle-kit drop
+
 app/services/notes.ts を以下のように変更します  。
 ------
 import { eq } from "drizzle-orm"
@@ -1620,5 +1623,153 @@ export const getNotes = async () => {
 // ...
 ------
 
+ Drizzleには、アプリケーションレベルでテーブル間の関係を定義できる「 リレーション」という機能があります 。これらのリレーション定義はデータベースに保存されず、SQL制約やマイグレーションも生成されません。Drizzleにテーブル間の接続方法を伝えるためだけに存在し、DrizzleのリレーショナルクエリAPIが 関連データを自動的に結合できるようにします。
 
+schema.ts は 次のように変更されます。
+-------
+import { pgTable, serial, text, boolean, integer } from "drizzle-orm/pg-core"
+import { relations } from "drizzle-orm"
+
+export const users = pgTable("users", {
+    // ...
+})
+
+export const notes = pgTable("notes", {
+  // ...
+})
+
+export const usersRelations = relations(users, ({ many }) => ({
+  notes: many(notes),
+})) //usersRelations の 定義によれば、ユーザーは 複数の メモを持つことができる。
+
+
+
+export const notesRelations = relations(notes, ({ one }) => ({
+  user: one(users, {
+    fields: [notes.userId],
+    references: [users.id],
+    //フィールド と 参照 プロパティは、外部キー列を保持する側（この場合は、  user_idが notesテーブルに存在する ため、
+    //notes側）で常に必要となることに注意してください 。
+
+
+  }),
+}))
+//notesRelations  定義では、ノートは 1 人の ユーザーに属すると定義
+-------
+ relations 関数は 、 テーブル 間の関係を宣言するために使用されます。最初の引数はテーブル、2 番目の引数はヘルパー関数 ( many、  one ) を受け取り、関連するテーブルを記述するオブジェクトを返すコールバックです
+
+
+クエリロガー
+予期しない動作が発生した場合、Drizzleがデータベースに送信する正確なSQLを確認すると便利です。db  /index.ts で接続を作成する際に ロガーオプションを渡すことで、ログ記録を有効にできます。
+
+強調表示された行数：6
+import { drizzle } from "drizzle-orm/neon-http"
+import * as schema from "./schema"
+
+export const db = drizzle(process.env.DATABASE_URL!, {
+  schema,
+  logger: true,
+})
+
+
+Next.jsの認証系
+Next.jsアプリに認証機能を追加するために 、Next.jsで最も人気のある認証ライブラリであるNextAuth.jsを使用します。NextAuthは、セッション、コールバック、プロバイダー統合など、認証フロー全体を処理します。また、パスワードを安全にハッシュ化して比較するためにbcryptjsも必要です  。
+
+まず、必要なパッケージをインストールします。
+npm install next-auth@beta bcryptjs && npm install -D @types/bcryptjs
+
+スキーマ変更
+コースのこれまでの部分と同様に、各ユーザーのハッシュ化されたパスワードを保存する必要があります。 ユーザー テーブルに新しい列が追加されます。
+--------
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  name: text("name").notNull(),
+  passwordHash: text("password_hash").notNull().default(""),
+})
+--------
+
+NextAuthの設定
+設定の中核となるのは、NextAuth の設定ファイル auth.tsです。
+----
+import NextAuth from "next-auth"
+import Credentials from "next-auth/providers/credentials"
+import { eq } from "drizzle-orm"
+import bcrypt from "bcryptjs"
+import { db } from "./db"
+import { users } from "./db/schema"
+
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  providers: [
+    Credentials({
+      credentials: {
+        username: { label: "Username", type: "text" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.username || !credentials?.password) {
+          return null
+        }
+
+        const user = await db.query.users.findFirst({
+          where: eq(users.username, credentials.username as string),
+        })
+
+        if (!user || !user.passwordHash) {
+          return null
+        }
+
+        const isValid = await bcrypt.compare(
+          credentials.password as string,
+          user.passwordHash,
+        )
+
+        if (!isValid) {
+          return null
+        }
+
+        return {
+          id: String(user.id),
+          name: user.name,
+          email: user.username,
+        }
+      },
+    }),
+  ],
+  pages: {
+    signIn: "/login",
+  },
+  session: {
+    strategy: "jwt",
+  },
+})
+----
+
+認証APIルート
+NextAuthでは、 すべての認証リクエスト（サインイン、サインアウト、セッションチェック）を処理するAPIルートが必要です。app /api/auth/[...nextauth]/route.ts ファイルを作成します 。
+
+[...nextauth] の部分は、Next.js の 包括的なルートセグメントで、 /api/auth/ 配下の任意のパス （例：  /api/auth/signin、  /api/auth/signout、  /api/auth/session）に一致します。NextAuth はこれらすべてをインターセプトし、自動的に処理します。
+
+-----
+import { handlers } from "@/auth"
+
+export const { GET, POST } = handlers
+-----
+
+
+NextAuth のuseSessionなどのクライアントサイドフックは  、React コンテキストを介してセッションデータを共有します。そのため、それを使用するコンポーネントの上にプロバイダーコンポーネントを配置する必要があります。NextAuth はまさにこの目的のために独自の SessionProvider を同梱しています 。React コンテキストを使用するため、クライアントコンポーネントである必要がありますが、クライアントコンポーネントをルートレイアウトに直接配置することはできないため、  app/components/SessionProvider.tsx という薄いラッパーを作成します。
+
+--------
+"use client"
+
+import { SessionProvider } from "next-auth/react"
+
+export default function AuthSessionProvider({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return <SessionProvider>{children}</SessionProvider>
+}
+--------
 
