@@ -1593,6 +1593,8 @@ export default defineConfig({
   },
 })
 ------
+
+
 Drizzle Kitにスキーマの場所、移行ファイルの出力先、およびデータベースへの接続方法を指示します。
 さらに、以下の2つのパッケージをインストールする必要があります。
 npm install --save-dev dotenv postgres
@@ -1609,6 +1611,9 @@ npx drizzle-kit studio
 
 ローカルの移行履歴を削除して、Drizzle Kitが以前に生成されたすべての移行を忘れるようにします。
 npx drizzle-kit drop
+
+npx drizzle-kit push 
+を実行することで、データベースの中に users テーブルや blogs テーブルが新しく作られ、プログラムが正しく読み書きできるようになるというわけなんだ！
 
 app/services/notes.ts を以下のように変更します  。
 ------
@@ -1773,3 +1778,295 @@ export default function AuthSessionProvider({
 }
 --------
 
+次に layout.tsxを更新して 、アプリを AuthSessionProviderでラップし、ツリー内のすべてのクライアント コンポーネントが useSessionを介してセッションにアクセスできるようにします。
+------
+import AuthSessionProvider from "./components/SessionProvider"
+import NavBar from "./components/NavBar"
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <AuthSessionProvider>
+          <NavBar />
+          {children}
+        </AuthSessionProvider>
+      </body>
+    </html>
+  )
+}
+------
+ナビゲーションバー
+ナビゲーションバーは、ユーザーがログインしているかどうかによって異なる表示にする必要があります。ログアウトボタンはonClickハンドラーでsignOut()を呼び出すため 、コンポーネント は クライアント コンポーネントである必要があります。useSessionフックを介してセッションを取得し 、 SessionProvider によって提供されるReactコンテキストから値を取得します 。コンポーネントは app/components/NavBar.tsxに配置します。
+
+-----
+"use client"
+
+import Link from "next/link"
+import { useSession, signOut } from "next-auth/react"
+
+export default function NavBar() {
+  const { data: session } = useSession()
+
+  return (
+    <nav>
+      <Link href="/">home</Link>
+      {" | "}
+      <Link href="/notes">notes</Link>
+      {" | "}
+      <Link href="/users">users</Link>
+      {" | "}
+      {session ? (
+        <>
+          <Link href="/notes/new">create new</Link>
+          {" | "}
+          <em>{session.user?.name} logged in</em>{" "}
+          <button onClick={() => signOut()}>logout</button>
+        </>
+      ) : (
+        <Link href="/login">login</Link>
+      )}
+    </nav>
+  )
+}
+-----
+
+ログインページ
+ログインページは app/login/page.tsxにあります。これはフォーム送信を処理し、エラーメッセージのローカル状態を管理するため、クライアントコンポーネントです。
+-------
+"use client"
+
+import { signIn } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
+
+export default function LoginPage() {
+  const router = useRouter()
+  const [error, setError] = useState("")
+
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+
+    const result = await signIn("credentials", {
+      username: formData.get("username"),
+      password: formData.get("password"),
+      redirect: false,
+    })
+
+    if (result?.error) {
+      setError("Invalid username or password")
+    } else {
+      router.push("/")
+      router.refresh()
+    }
+  }
+
+  return (
+    <div>
+      <h2>Login</h2>
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label>
+            Username
+            <input type="text" name="username" required />
+          </label>
+        </div>
+        <div>
+          <label>
+            Password
+            <input type="password" name="password" required />
+          </label>
+        </div>
+        <button type="submit">Login</button>
+      </form>
+    </div>
+  )
+}
+-------
+
+サーバー上のセッションを読み込む
+サーバーコンポーネントとサーバーアクションでは、フックはブラウザでのみ実行されるため、  useSession は使用できません 。代わりに、Auth.js はサーバー側でリクエストヘッダーからセッションを読み取るauth関数を提供します。これをヘルパー関数app/services/session.ts でラップします 。
+------
+import { auth } from "@/auth"
+import { eq } from "drizzle-orm"
+import { db } from "../../db"
+import { users } from "../../db/schema"
+
+export const getCurrentUser = async () => {
+  const session = await auth()
+  if (!session?.user?.email) {
+    return null
+  }
+
+  return db.query.users.findFirst({
+    where: eq(users.username, session.user.email),
+  })
+}
+------
+
+ノート作成アクションの保護
+認証機能が実装されたので、  createNote サーバーアクションを保護し、ログインしているユーザーのみがノートを作成できるようにすることができます。
+-------
+export const createNote = async (formData: FormData) => {
+  const session = await auth()
+  if (!session) {
+    redirect("/login")
+  }
+
+  const content = formData.get("content") as string
+  const important = formData.get("important") === "on"
+  await addNote(content, important)
+
+  revalidatePath("/notes")
+  redirect("/notes")
+}
+-------
+addNoteのランダムユーザーハックを、  getCurrentUser の適切な呼び出しに 置き換えることもできます。
+
+------
+import { getCurrentUser } from "./session"
+
+export const addNote = async (content: string, important: boolean) => {
+  const user = await getCurrentUser()
+  if (!user) {
+    throw new Error("Not logged in")
+  }
+
+  await db.insert(notes).values({ content, important, userId: user.id })
+}
+------
+
+
+環境変数
+NextAuthでは、JWTセッショントークンに署名するための秘密鍵が必要です。例えば、以下のように生成できます。
+
+echo "$(openssl rand -base64 32)"
+
+出力結果を 手動で.env.localにコピーしてください 。
+DATABASE_URL=postgresql://...
+AUTH_SECRET=your-generated-secret-here
+
+Vercelでは、  [設定] > [環境変数]で AUTH_SECRET と AUTH_URL を追加します。AUTH_URLの値は  、デプロイしたアプリの公開URLです。例:  https://your-app.vercel.app。
+
+既存ユーザーのパスワード設定
+passwordHash列を追加した後  、データベース内の既存ユーザーのパスワードハッシュは空の文字列になっているため、まだログインできません。これらのユーザーに実際のパスワードを設定する方法が必要です。Drizzle Studio で手動で設定するのではなく、  プロジェクトルートにset-password.ts という小さなユーティリティスクリプトを作成できます。
+------
+import { config } from "dotenv"
+config({ path: ".env.local" })
+import bcrypt from "bcryptjs"
+import { eq } from "drizzle-orm"
+
+async function setPassword(username: string, password: string) {
+  const { db } = await import("./db")
+  const { users } = await import("./db/schema")
+  const hash = await bcrypt.hash(password, 10)
+  await db
+    .update(users)
+    .set({ passwordHash: hash })
+    .where(eq(users.username, username))
+  console.log(`Password set for user: ${username}`)
+}
+
+const username = process.argv[2]
+const password = process.argv[3]
+
+if (!username || !password) {
+  console.log("Usage: npx tsx set-password.ts <username> <password>")
+  process.exit(1)
+}
+
+setPassword(username, password).then(() => process.exit(0))
+------
+
+このスクリプトは、コマンドライン引数からユーザー名と平文パスワードを読み取ります。bcrypt.hashを使用してコスト係数10でパスワードをハッシュ化し 、 データベース内の該当するユーザー行を更新します。コスト係数はハッシュ計算の計算コストを制御します。値が大きいほど総当たり攻撃は遅くなりますが、ログイン時の検証も遅くなります。10は一般的に推奨されるデフォルト値です。
+
+tsxを使用してスクリプトを実行してください 。tsx は、別途コンパイル手順を経ずに TypeScript ファイルを直接実行します。
+
+
+npx tsx set-password.ts mluukkai secretpassword
+このスクリプトは、当然ながら開発用ユーティリティに過ぎません。
+
+
+
+ユーザー登録
+認証機能が実装できたので、次は適切な登録フローを導入し、新規ユーザーがDrizzle Studio経由で手動で追加されるのではなく、自分でアカウントを作成できるようにしましょう。
+
+パスワードをハッシュ化して新しいユーザーをデータベースに挿入するサーバーアクションが必要です。新しいファイル app/actions/users.tsに追加しましょう。
+------
+"use server"
+
+import { redirect } from "next/navigation"
+import bcrypt from "bcryptjs"
+import { db } from "../../db"
+import { users } from "../../db/schema"
+
+export const registerUser = async (formData: FormData) => {
+  const username = (formData.get("username") as string)?.trim()
+  const name = (formData.get("name") as string)?.trim()
+  const password = formData.get("password") as string
+
+  const passwordHash = await bcrypt.hash(password, 10)
+
+  await db.insert(users).values({ username, name, passwordHash })
+
+  redirect("/login")
+}
+------
+
+このアクションは  、フォームデータから ユーザー名、 名前、 パスワードを読み取り、 bcrypt.hashでパスワードをハッシュ化し、新しいユーザーを挿入して、ログインページにリダイレクトします。
+
+このアクションは、成功時に必ずリダイレクトする通常のサーバーアクションであるため、登録ページは、フォームがアクションを直接指すシンプルなサーバーコンポーネントで構いません。
+-----
+import Link from "next/link"
+import { registerUser } from "../actions/users"
+
+export default function RegisterPage() {
+  return (
+    <div>
+      <h2>Register</h2>
+      <form action={registerUser}>
+        <div>
+          <label>
+            Username
+            <input type="text" name="username" required />
+          </label>
+        </div>
+        <div>
+          <label>
+            Name
+            <input type="text" name="name" required />
+          </label>
+        </div>
+        <div>
+          <label>
+            Password
+            <input type="password" name="password" required />
+          </label>
+        </div>
+        <button type="submit">Register</button>
+      </form>
+    </div>
+  )
+}
+-----
+
+useActionStateで検証エラーを返す
+フォーム検証のより良い方法は、エラーをスローするのではなく、サーバーアクションからエラーを返し、そのメッセージをフォーム内にインラインで表示することです。React 19では、 まさにこの目的のためにuseActionState フックが提供されています。
+
+サーバーアクションのシグネチャを変更する必要があります。formData のみを受け取る代わりに、最初の引数としてprevState も受け取るようにします。これは、アクションによって返された以前の状態（または最初のレンダリング時の初期値）です。アクションは実際には prevState を使用しませんが、useActionState が期待するシグネチャと一致するように、prevState を受け入れる必要があります。
+
+検証に失敗した場合、エラーメッセージを含む新しい状態オブジェクトを返します。成功した場合は、以前と同様にリダイレクトを呼び出します。
+
+Tailwind CSSを使用してアプリのスタイルを設定する
+これまで、  スタイル設定が必要なごく少数のケースでは、 インラインスタイルオブジェクトを使用してきました。しかし、実際のアプリケーションでは、CSSに対する適切なアプローチが必要です。Next.jsのエコシステムにおいて主流となっているのは、ユーティリティファーストのCSSフレームワークであるTailwind CSSです。
+
+同じことを実現する別の方法として、CSS ファイルで Tailwind の @layer components ディレクティブを使用する方法があります。これにより、個別の React コンポーネントを作成することなく、複数の Tailwind ユーティリティを組み合わせたカスタム CSS クラスを定義できます。どちらの方法も効果的です。React コンポーネントを抽出することで、スタイリング ロジックをコンポーネント構造と同じ場所に保持できます。一方、CSS レイヤー方式では、すべてのスタイリング定義を 1 つの CSS ファイルにまとめることができます。
+
+MDXを読み込むための公式ライブラリ
+npm install @next/mdx @mdx-js/loader @mdx-js/rollup remark-gfm
